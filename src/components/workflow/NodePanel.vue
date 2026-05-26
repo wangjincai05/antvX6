@@ -36,9 +36,10 @@ const searchQuery = ref('')
 const nodeTypes = computed(() => Object.values(nodeRegistry))
 
 const filteredNodes = computed(() => {
-  if (!searchQuery.value) return nodeTypes.value
+  const filtered = nodeTypes.value.filter(n => n.type !== 'INPUT')
+  if (!searchQuery.value) return filtered
   const query = searchQuery.value.toLowerCase()
-  return nodeTypes.value.filter(
+  return filtered.filter(
     (node) =>
       node.name.toLowerCase().includes(query) ||
       node.description.toLowerCase().includes(query)
