@@ -10,8 +10,10 @@
     "format": "prettier --write \"src/**/*.{vue,js,jsx,ts,tsx}\""
   },
   "dependencies": {
-    "@antv/x6": "^2.18.1",
-    "@antv/x6-vue-shape": "^2.0.8",
+    "@antv/x6": "^3.0.0",
+    "@antv/x6-vue-shape": "^3.0.0",
+    "lucide-vue-next": "^1.0.0",
+    "tslib": "^2.8.1",
     "vue": "^3.4.21"
   },
   "devDependencies": {
@@ -28,6 +30,6 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3",
     "vite": "^5.0.12",
-    "vue-tsc": "^1.8.27"
+    "vue-tsc": "^3.3.1"
   }
 }

@@ -92,12 +92,11 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import type { Node, Edge } from '@antv/x6'
-import { nodeTypes } from '@/utils/nodeTypes'
+import { nodeRegistry } from '@/config/workflow/node-registry'
 
 const props = defineProps<{
-  selectedNode: Node | null
-  selectedEdge: Edge | null
+  selectedNode: any | null
+  selectedEdge: any | null
 }>()
 
 const emit = defineEmits<{
@@ -113,8 +112,10 @@ const linkedProperties = ref<Record<string, string>>({
   '错误处理': '继续执行'
 })
 
+const nodeTypes = computed(() => Object.values(nodeRegistry))
+
 const getNodeTypeName = (type: string): string => {
-  const node = nodeTypes.find((n) => n.id === type)
+  const node = nodeTypes.value.find((n) => n.type === type)
   return node?.name || type
 }
 
@@ -122,7 +123,8 @@ watch(
   () => props.selectedNode,
   (node) => {
     if (node) {
-      nodeLabel.value = node.label || ''
+      const nodeData = node.getData?.() || {}
+      nodeLabel.value = (node as any).label || nodeData.label || ''
     }
   }
 )
@@ -131,15 +133,17 @@ watch(
   () => props.selectedEdge,
   (edge) => {
     if (edge) {
-      const color = edge.attrs.line?.stroke
-      edgeColor.value = color || '#5f95ff'
+      const edgeAttrs = (edge as any).attrs || {}
+      const lineAttrs = edgeAttrs.line || {}
+      const color = lineAttrs.stroke
+      edgeColor.value = typeof color === 'string' ? color : '#5f95ff'
     }
   }
 )
 
 const updateNodeLabel = () => {
   if (props.selectedNode) {
-    props.selectedNode.setLabel(nodeLabel.value)
+    (props.selectedNode as any).setLabel?.(nodeLabel.value)
     emit('updateLabel', nodeLabel.value)
   }
 }

@@ -16,24 +16,11 @@
     </div>
     <div class="flex-1 overflow-y-auto p-4">
       <div class="space-y-2">
-        <div
+        <DraggableNode
           v-for="node in filteredNodes"
-          :key="node.id"
-          class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-grab hover:bg-gray-100 transition-colors border border-gray-200 hover:border-blue-300"
-          :draggable="true"
-          @dragstart="handleDragStart($event, node.id)"
-        >
-          <div
-            class="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-lg"
-            :style="{ backgroundColor: node.color }"
-          >
-            {{ node.icon }}
-          </div>
-          <div>
-            <div class="text-sm font-medium text-gray-800">{{ node.name }}</div>
-            <div class="text-xs text-gray-500">{{ node.description }}</div>
-          </div>
-        </div>
+          :key="node.type"
+          :node="node"
+        />
       </div>
     </div>
   </div>
@@ -41,21 +28,20 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { nodeTypes } from '@/utils/nodeTypes'
+import { nodeRegistry } from '@/config/workflow/node-registry'
+import DraggableNode from './DraggableNode.vue'
 
 const searchQuery = ref('')
 
+const nodeTypes = computed(() => Object.values(nodeRegistry))
+
 const filteredNodes = computed(() => {
-  if (!searchQuery.value) return nodeTypes
+  if (!searchQuery.value) return nodeTypes.value
   const query = searchQuery.value.toLowerCase()
-  return nodeTypes.filter(
+  return nodeTypes.value.filter(
     (node) =>
       node.name.toLowerCase().includes(query) ||
       node.description.toLowerCase().includes(query)
   )
 })
-
-const handleDragStart = (event: DragEvent, nodeType: string) => {
-  event.dataTransfer?.setData('node-type', nodeType)
-}
 </script>
