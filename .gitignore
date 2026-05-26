@@ -4,6 +4,8 @@ dist-ssr
 *.local
 
 .DS_Store
+.opencode/*
+.trae/*
 .vscode/*
 !.vscode/extensions.json
 .idea

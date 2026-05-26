@@ -201,12 +201,26 @@ export const nodeRegistry: Record<string, NodeConfig> = {
   }
 }
 
+export const portInteractionStyles = {
+  default: {
+    r: 2
+  },
+  nodeHover: {
+    r: 6
+  },
+  portHover: {
+    r: 8,
+    fill: '#5f95ff',
+    stroke: '#5f95ff'
+  }
+}
+
 export const portGroups = {
   top: {
     position: 'top' as const,
     attrs: {
       circle: {
-        r: 6,
+        r: portInteractionStyles.default.r,
         magnet: true,
         stroke: '#5f95ff',
         strokeWidth: 2,
@@ -218,7 +232,7 @@ export const portGroups = {
     position: 'bottom' as const,
     attrs: {
       circle: {
-        r: 6,
+        r: portInteractionStyles.default.r,
         magnet: true,
         stroke: '#52c41a',
         strokeWidth: 2,
@@ -230,7 +244,7 @@ export const portGroups = {
     position: 'left' as const,
     attrs: {
       circle: {
-        r: 6,
+        r: portInteractionStyles.default.r,
         magnet: true,
         stroke: '#5f95ff',
         strokeWidth: 2,
@@ -242,7 +256,7 @@ export const portGroups = {
     position: 'right' as const,
     attrs: {
       circle: {
-        r: 6,
+        r: portInteractionStyles.default.r,
         magnet: true,
         stroke: '#52c41a',
         strokeWidth: 2,
@@ -251,3 +265,5 @@ export const portGroups = {
     }
   }
 }
+
+
