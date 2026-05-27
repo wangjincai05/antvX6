@@ -1,6 +1,3 @@
-import type { Graph } from '@antv/x6';
-import { nodeRegistry } from '@/config/workflow/node-registry';
-
 interface CellData {
   type?: string;
 }
@@ -14,26 +11,31 @@ interface Magnet {
 }
 
 export function validateConnection(
-  sourceCell: Cell | null | undefined,
-  targetCell: Cell | null | undefined,
-  sourceMagnet: Magnet | null | undefined,
-  targetMagnet: Magnet | null | undefined
+  sourceCell: unknown,
+  targetCell: unknown,
+  sourceMagnet: unknown,
+  targetMagnet: unknown
 ) {
   if (!sourceMagnet) return { valid: false, reason: '源连接点不存在' };
   if (!targetMagnet) return { valid: false, reason: '目标连接点不存在' };
   if (sourceCell === targetCell) return { valid: false, reason: '不能连接到自身' };
 
-  const sourceType = sourceCell?.data?.type;
-  const targetType = targetCell?.data?.type;
+  const sourceCellData = sourceCell as Cell | null | undefined;
+  const targetCellData = targetCell as Cell | null | undefined;
+  const sourceMagnetObj = sourceMagnet as Magnet | null | undefined;
+  const targetMagnetObj = targetMagnet as Magnet | null | undefined;
+
+  const sourceType = sourceCellData?.data?.type;
+  const targetType = targetCellData?.data?.type;
 
   if (sourceType === 'INPUT') {
-    if (!sourceMagnet.getAttribute('port-group')?.includes('bottom')) {
+    if (!sourceMagnetObj?.getAttribute('port-group')?.includes('bottom')) {
       return { valid: false, reason: '开始节点只能从底部端口输出' };
     }
   }
 
   if (targetType === 'OUTPUT') {
-    if (!targetMagnet.getAttribute('port-group')?.includes('top')) {
+    if (!targetMagnetObj?.getAttribute('port-group')?.includes('top')) {
       return { valid: false, reason: '结束节点只能从顶部端口输入' };
     }
   }
@@ -47,33 +49,4 @@ export function validateConnection(
   }
 
   return { valid: true, reason: '' };
-}
-
-export function getConnectionRules(nodeType: string) {
-  const config = nodeRegistry[nodeType];
-  if (!config) return { canConnectFrom: true, canConnectTo: true };
-
-  switch (nodeType) {
-    case 'INPUT':
-      return { canConnectFrom: false, canConnectTo: true };
-    case 'OUTPUT':
-      return { canConnectFrom: true, canConnectTo: false };
-    default:
-      return { canConnectFrom: true, canConnectTo: true };
-  }
-}
-
-export function hasValidConnection(graph: Graph, sourceNodeId: string, targetNodeId: string) {
-  const sourceNode = graph.getCellById(sourceNodeId);
-  const targetNode = graph.getCellById(targetNodeId);
-
-  if (!sourceNode || !targetNode) return false;
-
-  const sourceType = sourceNode.data?.type;
-  const targetType = targetNode.data?.type;
-
-  if (sourceType === 'OUTPUT') return false;
-  if (targetType === 'INPUT') return false;
-
-  return true;
 }

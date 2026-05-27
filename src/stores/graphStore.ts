@@ -6,6 +6,7 @@ import { defaultGraphOptions, nodeStyle, edgeStyle } from '@/config/workflow/gra
 import { nodeRegistry, portGroups, portInteractionStyles } from '@/config/workflow/node-registry';
 import type { NodeData, EdgeData } from '@/types/workflow';
 import WorkflowNode from '@/components/workflow/WorkflowNode.vue';
+import { validateConnection } from '@/utils/connection';
 
 export const useGraphStore = defineStore('graph', () => {
   const graphRef = ref<Graph | null>(null);
@@ -29,20 +30,18 @@ export const useGraphStore = defineStore('graph', () => {
       component: WorkflowNode,
     });
 
-    interface ValidateConnectionParams {
-      sourceCell: unknown;
-      targetCell: unknown;
-      sourceMagnet: unknown;
-      targetMagnet: unknown;
-    }
-
     interface GraphOptions {
       container: HTMLElement;
       width: number;
       height: number;
       connecting: {
         createEdge?: () => Edge;
-        validateConnection?: (params: ValidateConnectionParams) => boolean;
+        validateConnection?: (params: {
+          sourceCell: unknown;
+          targetCell: unknown;
+          sourceMagnet: unknown;
+          targetMagnet: unknown;
+        }) => boolean;
       } & Record<string, unknown>;
     }
 
@@ -58,16 +57,12 @@ export const useGraphStore = defineStore('graph', () => {
             ...edgeStyle,
           });
         },
-        validateConnection({
-          sourceCell,
-          targetCell,
-          sourceMagnet,
-          targetMagnet,
-        }: ValidateConnectionParams) {
-          if (!sourceMagnet) return false;
-          if (!targetMagnet) return false;
-          if (sourceCell === targetCell) return false;
-          return true;
+        validateConnection({ sourceCell, targetCell, sourceMagnet, targetMagnet }) {
+          const result = validateConnection(sourceCell, targetCell, sourceMagnet, targetMagnet);
+          if (!result.valid) {
+            console.log('Connection validation failed:', result.reason);
+          }
+          return result.valid;
         },
       },
     };
