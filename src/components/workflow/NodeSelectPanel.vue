@@ -114,8 +114,8 @@ const nodeCategories: Category[] = [
     ],
   },
   {
-    name: '输入&输出',
-    nodes: [nodeRegistry.INPUT, nodeRegistry.OUTPUT],
+    name: '输出',
+    nodes: [nodeRegistry.OUTPUT],
   },
   {
     name: '数据库',

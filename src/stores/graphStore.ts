@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { Graph, Node, Edge, Selection } from '@antv/x6';
+import { Graph, Node, Edge, Selection, History, Keyboard } from '@antv/x6';
 import { register } from '@antv/x6-vue-shape';
 import { defaultGraphOptions, nodeStyle, edgeStyle } from '@/config/workflow/graph-options';
 import { nodeRegistry, portGroups, portInteractionStyles } from '@/config/workflow/node-registry';
@@ -12,6 +12,8 @@ export const useGraphStore = defineStore('graph', () => {
   const graphRef = ref<Graph | null>(null);
   const selectedNode = ref<Node | null>(null);
   const selectedEdge = ref<Edge | null>(null);
+  const statusMessage = ref<string | null>(null);
+  const keyboardEnabled = ref(true);
 
   interface CellData {
     type?: string;
@@ -79,7 +81,13 @@ export const useGraphStore = defineStore('graph', () => {
           });
         },
         validateConnection({ sourceCell, targetCell, sourceMagnet, targetMagnet }) {
-          const result = validateConnection(sourceCell, targetCell, sourceMagnet, targetMagnet);
+          const result = validateConnection(
+            sourceCell,
+            targetCell,
+            sourceMagnet,
+            targetMagnet,
+            graphRef.value
+          );
           if (!result.valid) {
             console.log('Connection validation failed:', result.reason);
           }
@@ -92,15 +100,42 @@ export const useGraphStore = defineStore('graph', () => {
 
     graphRef.value.use(
       new Selection({
-        enabled: true, // 启用选择功能
-        multiple: true, // 允许选择多个元素
-        rubberband: true, // 是否启用框选节点功能
-        rubberNode: true, // 启用节点选择
-        rubberEdge: false, // 启用边选择
-        modifiers: 'shift', // 同用选择多个元素
-        strict: false, // 允许选择非连续元素
-        movable: true, // 允许移动元素
-        showNodeSelectionBox: true, // 显示节点选择框
+        enabled: true,
+        multiple: true,
+        rubberband: true,
+        rubberNode: true,
+        rubberEdge: false,
+        modifiers: 'shift',
+        strict: false,
+        movable: true,
+        showNodeSelectionBox: true,
+      })
+    );
+
+    graphRef.value.use(
+      new Keyboard({
+        enabled: true,
+        guard(this: Graph, e: KeyboardEvent) {
+          const target = e.target as HTMLElement;
+          const isInput =
+            target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+          return !isInput && keyboardEnabled.value;
+        },
+      })
+    );
+
+    graphRef.value.use(
+      new History({
+        enabled: true,
+        beforeAddCommand(event, args) {
+          if (args.key) {
+            // 禁止删除按钮及样式切换添加到 Undo 队列中
+            if (['tools', 'attrs', 'ports', 'labels', 'zIndex'].includes(args.key)) {
+              return false;
+            }
+            return true;
+          }
+        },
       })
     );
 
@@ -128,6 +163,26 @@ export const useGraphStore = defineStore('graph', () => {
       selectedEdge.value = null;
     });
 
+    graphRef.value.on('connecting:start', () => {
+      showStatusMessage('从输出桩（绿色）拖动到输入桩（蓝色）', 3000);
+    });
+
+    graphRef.value.on('node:mouseenter', ({ node }) => {
+      if (node) {
+        handlePortHighlight(node, true);
+      }
+    });
+
+    graphRef.value.on('node:mouseleave', ({ node }) => {
+      if (node) {
+        handlePortHighlight(node, false);
+      }
+    });
+
+    graphRef.value.on('edge:connected', ({ edge }) => {
+      showStatusMessage('连线创建成功');
+    });
+
     const width =
       (graphRef.value as unknown as { getWidth?: () => number }).getWidth?.() ||
       container.offsetWidth;
@@ -136,23 +191,83 @@ export const useGraphStore = defineStore('graph', () => {
       container.offsetHeight;
     addNode('INPUT', width / 2 - nodeStyle.width / 2, height / 2 - nodeStyle.height / 2);
 
-    graphRef.value.bindKey('del', () => {
+    graphRef.value.bindKey('del', (e) => {
+      e.preventDefault();
       const selected = graphRef.value!.getSelectedCells();
       const toRemove = selected.filter((cell: CellWithData) => cell.data?.type !== 'INPUT');
       if (toRemove.length > 0) {
         graphRef.value!.removeCells(
           toRemove as unknown as Parameters<typeof graphRef.value.removeCells>[0]
         );
+        showStatusMessage(`已删除 ${toRemove.length} 个节点`);
+      } else {
+        showStatusMessage('未选择任何节点');
       }
     });
 
-    graphRef.value.bindKey('backspace', () => {
+    graphRef.value.bindKey('backspace', (e) => {
+      e.preventDefault();
       const selected = graphRef.value!.getSelectedCells();
       const toRemove = selected.filter((cell: CellWithData) => cell.data?.type !== 'INPUT');
       if (toRemove.length > 0) {
         graphRef.value!.removeCells(
           toRemove as unknown as Parameters<typeof graphRef.value.removeCells>[0]
         );
+        showStatusMessage(`已删除 ${toRemove.length} 个节点`);
+      } else {
+        showStatusMessage('未选择任何节点');
+      }
+    });
+
+    graphRef.value.bindKey(['ctrl+z', 'meta+z'], (e) => {
+      e.preventDefault();
+      const graph = graphRef.value!;
+      const history = graph as unknown as { canUndo: () => boolean; undo: () => void };
+      if (history.canUndo()) {
+        history.undo();
+        showStatusMessage('已撤销');
+      } else {
+        showStatusMessage('无可撤销操作');
+      }
+    });
+
+    graphRef.value.bindKey(['ctrl+shift+z', 'ctrl+y', 'meta+shift+z', 'meta+y'], (e) => {
+      e.preventDefault();
+      const graph = graphRef.value!;
+      const history = graph as unknown as { canRedo: () => boolean; redo: () => void };
+      if (history.canRedo()) {
+        history.redo();
+        showStatusMessage('已恢复');
+      } else {
+        showStatusMessage('无可恢复操作');
+      }
+    });
+
+    graphRef.value.bindKey(['ctrl++', 'ctrl+='], (e) => {
+      e.preventDefault();
+      const graph = graphRef.value!;
+      const currentScale = (graph as unknown as { getScale: () => number }).getScale();
+      const zoomGraph = graph as unknown as { zoomTo: (scale: number) => void };
+      if (currentScale < 2) {
+        const newScale = Math.min(currentScale * 1.2, 2);
+        zoomGraph.zoomTo(newScale);
+        showStatusMessage(`缩放: ${Math.round(newScale * 100)}%`);
+      } else {
+        showStatusMessage('已达到最大缩放比例');
+      }
+    });
+
+    graphRef.value.bindKey(['ctrl+-'], (e) => {
+      e.preventDefault();
+      const graph = graphRef.value!;
+      const currentScale = (graph as unknown as { getScale: () => number }).getScale();
+      const zoomGraph = graph as unknown as { zoomTo: (scale: number) => void };
+      if (currentScale > 0.2) {
+        const newScale = Math.max(currentScale * 0.8, 0.2);
+        zoomGraph.zoomTo(newScale);
+        showStatusMessage(`缩放: ${Math.round(newScale * 100)}%`);
+      } else {
+        showStatusMessage('已达到最小缩放比例');
       }
     });
 
@@ -334,13 +449,14 @@ export const useGraphStore = defineStore('graph', () => {
     }
   };
 
-  interface NodePort {
-    id?: string;
-  }
-
   interface NodeWithPorts {
     getPorts: () => NodePort[];
     portProp: (portId: string, path: string, value: number) => void;
+  }
+
+  interface NodePort {
+    id?: string;
+    group?: string;
   }
 
   const handleNodeMouseOver = (node: unknown) => {
@@ -359,10 +475,23 @@ export const useGraphStore = defineStore('graph', () => {
     });
   };
 
+  const handlePortHighlight = (node: unknown, highlight: boolean) => {
+    const nodeWithPorts = node as NodeWithPorts;
+    const ports = nodeWithPorts.getPorts();
+    const targetR = highlight ? portInteractionStyles.portHover.r : portInteractionStyles.default.r;
+    ports.forEach((port: NodePort) => {
+      if (port.group === 'top' || port.group === 'left') {
+        nodeWithPorts.portProp(port.id || '', 'attrs/circle/r', targetR);
+      }
+    });
+  };
+
   return {
     graphRef,
     selectedNode,
     selectedEdge,
+    statusMessage,
+    keyboardEnabled,
     initGraph,
     addNode,
     clearCanvas,
@@ -371,5 +500,8 @@ export const useGraphStore = defineStore('graph', () => {
     resetZoom,
     exportWorkflow,
     importWorkflow,
+    showStatusMessage,
+    enableKeyboard,
+    disableKeyboard,
   };
 });

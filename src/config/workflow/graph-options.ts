@@ -46,15 +46,18 @@ export const defaultGraphOptions = {
     anchor: 'center',
     connectionPoint: 'anchor',
     allowBlank: false,
+    allowLoop: false,
+    highlight: true,
     snap: {
-      radius: 20,
+      radius: 50,
     },
   },
   highlighting: {
-    magnetAdsorbed: {
+    magnetAvailable: {
       name: 'stroke',
       args: {
         attrs: {
+          padding: 8,
           fill: '#fff',
           stroke: '#31d0c6',
           strokeWidth: 4,

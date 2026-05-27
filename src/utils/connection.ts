@@ -4,17 +4,36 @@ interface CellData {
 
 interface Cell {
   data?: CellData;
+  id?: string;
+  getEdges?: () => Edge[];
+}
+
+interface Edge {
+  getSourceCellId?: () => string | undefined;
+  getTargetCellId?: () => string | undefined;
 }
 
 interface Magnet {
   getAttribute: (name: string) => string | null;
 }
 
+export const OUTPUT_PORT_GROUPS = ['right', 'bottom'];
+export const INPUT_PORT_GROUPS = ['left', 'top'];
+
+export function isOutputPort(portGroup: string | null | undefined): boolean {
+  return OUTPUT_PORT_GROUPS.includes(portGroup || '');
+}
+
+export function isInputPort(portGroup: string | null | undefined): boolean {
+  return INPUT_PORT_GROUPS.includes(portGroup || '');
+}
+
 export function validateConnection(
   sourceCell: unknown,
   targetCell: unknown,
   sourceMagnet: unknown,
-  targetMagnet: unknown
+  targetMagnet: unknown,
+  graph?: { getEdges: () => Edge[] }
 ) {
   if (!sourceMagnet) return { valid: false, reason: '源连接点不存在' };
   if (!targetMagnet) return { valid: false, reason: '目标连接点不存在' };
@@ -27,25 +46,36 @@ export function validateConnection(
 
   const sourceType = sourceCellData?.data?.type;
   const targetType = targetCellData?.data?.type;
-
-  if (sourceType === 'INPUT') {
-    if (!sourceMagnetObj?.getAttribute('port-group')?.includes('bottom')) {
-      return { valid: false, reason: '开始节点只能从底部端口输出' };
-    }
-  }
-
-  if (targetType === 'OUTPUT') {
-    if (!targetMagnetObj?.getAttribute('port-group')?.includes('top')) {
-      return { valid: false, reason: '结束节点只能从顶部端口输入' };
-    }
-  }
+  const sourcePortGroup = sourceMagnetObj?.getAttribute('port-group');
+  const targetPortGroup = targetMagnetObj?.getAttribute('port-group');
 
   if (sourceType === 'OUTPUT') {
-    return { valid: false, reason: '结束节点不能作为源节点' };
+    return { valid: false, reason: '输出节点不能作为源节点' };
   }
 
   if (targetType === 'INPUT') {
     return { valid: false, reason: '开始节点不能作为目标节点' };
+  }
+
+  if (!isOutputPort(sourcePortGroup)) {
+    return { valid: false, reason: '输入桩不能发起连线，请使用输出桩（右侧或底部）' };
+  }
+
+  if (!isInputPort(targetPortGroup)) {
+    return { valid: false, reason: '输出桩不能接收连线，请连接至输入桩（左侧或顶部）' };
+  }
+
+  if (graph && sourceCellData?.id && targetCellData?.id) {
+    const edges = graph.getEdges();
+    const existingConnection = edges.find((edge) => {
+      const sourceId = edge.getSourceCellId?.();
+      const targetId = edge.getTargetCellId?.();
+      return sourceId === sourceCellData.id && targetId === targetCellData.id;
+    });
+
+    if (existingConnection) {
+      return { valid: false, reason: '这两节点之间已存在连线' };
+    }
   }
 
   return { valid: true, reason: '' };

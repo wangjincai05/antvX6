@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full flex flex-col bg-gray-100">
+  <div class="w-full h-full flex flex-col bg-gray-100 relative">
     <Toolbar
       @zoom-in="handleZoomIn"
       @zoom-out="handleZoomOut"
@@ -32,6 +32,15 @@
       @stop="handleStop"
       @add-node="handleAddNode"
     />
+
+    <Transition name="fade">
+      <div
+        v-if="statusMessage"
+        class="absolute top-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg text-sm z-50"
+      >
+        {{ statusMessage }}
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -65,6 +74,7 @@ const {
   zoomOut,
   resetZoom,
   addNode,
+  statusMessage,
 } = graphStore;
 
 const { startExecution, stopExecution, workflowState } = workflowStore;
@@ -178,3 +188,18 @@ const handleUpdateLabel = (label: string) => {
   console.log('Update label:', label);
 };
 </script>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -10px);
+}
+</style>
