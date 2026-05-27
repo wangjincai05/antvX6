@@ -18,7 +18,7 @@
         <div class="p-3 bg-gray-50 rounded-lg">
           <div class="text-xs text-gray-500 mb-1">节点类型</div>
           <div class="text-sm font-medium text-gray-800">
-            {{ getNodeTypeName(selectedNode.data.type) }}
+            {{ getNodeTypeName(selectedNode.data?.type || '') }}
           </div>
         </div>
         <div>
@@ -102,9 +102,38 @@
 import { ref, watch, computed } from 'vue';
 import { nodeRegistry } from '@/config/workflow/node-registry';
 
+interface NodeData {
+  type?: string;
+  label?: string;
+}
+
+interface InspectorNode {
+  data?: NodeData;
+  getData?: () => NodeData;
+  label?: string;
+  position: () => { x: number; y: number };
+  setLabel?: (label: string) => void;
+}
+
+interface EdgeLineAttrs {
+  stroke?: string;
+}
+
+interface EdgeAttrs {
+  line?: EdgeLineAttrs;
+}
+
+interface InspectorEdge {
+  getSourceCellId: () => string | undefined;
+  getTargetCellId: () => string | undefined;
+  attrs?: EdgeAttrs | null;
+  setAttrs?: (...args: unknown[]) => unknown;
+  attr: (path: string, value: string) => void;
+}
+
 const props = defineProps<{
-  selectedNode: any | null;
-  selectedEdge: any | null;
+  selectedNode: InspectorNode | null;
+  selectedEdge: InspectorEdge | null;
 }>();
 
 const emit = defineEmits<{
@@ -131,8 +160,9 @@ watch(
   () => props.selectedNode,
   (node) => {
     if (node) {
-      const nodeData = node.getData?.() || {};
-      nodeLabel.value = (node as any).label || nodeData.label || '';
+      const nodeWithMethods = node as InspectorNode;
+      const nodeData = nodeWithMethods.getData?.() || {};
+      nodeLabel.value = nodeWithMethods.label || nodeData.label || '';
     }
   }
 );
@@ -141,7 +171,8 @@ watch(
   () => props.selectedEdge,
   (edge) => {
     if (edge) {
-      const edgeAttrs = (edge as any).attrs || {};
+      const edgeWithAttrs = edge as InspectorEdge;
+      const edgeAttrs = edgeWithAttrs.attrs || {};
       const lineAttrs = edgeAttrs.line || {};
       const color = lineAttrs.stroke;
       edgeColor.value = typeof color === 'string' ? color : '#5f95ff';
@@ -151,14 +182,14 @@ watch(
 
 const updateNodeLabel = () => {
   if (props.selectedNode) {
-    (props.selectedNode as any).setLabel?.(nodeLabel.value);
+    (props.selectedNode as InspectorNode).setLabel?.(nodeLabel.value);
     emit('updateLabel', nodeLabel.value);
   }
 };
 
 const updateEdgeColor = () => {
   if (props.selectedEdge) {
-    props.selectedEdge.attr('line/stroke', edgeColor.value);
+    (props.selectedEdge as InspectorEdge).attr('line/stroke', edgeColor.value);
   }
 };
 </script>

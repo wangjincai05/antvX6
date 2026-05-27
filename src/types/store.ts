@@ -1,10 +1,10 @@
-import type { Graph } from '@antv/x6';
+import type { Graph, Node, Edge } from '@antv/x6';
 import type { WorkflowState, ExecutionState } from '@/types/workflow';
 
 export interface GraphState {
   graphRef: Graph | null;
-  selectedNode: any;
-  selectedEdge: any;
+  selectedNode: Node | null;
+  selectedEdge: Edge | null;
 }
 
 export interface UIState {

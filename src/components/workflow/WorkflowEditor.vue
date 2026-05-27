@@ -16,8 +16,8 @@
         <RunPanel v-if="showRunPanel" class="border-t border-gray-200" />
       </div>
       <InspectorPanel
-        :selected-node="selectedNode"
-        :selected-edge="selectedEdge"
+        :selected-node="inspectorSelectedNode"
+        :selected-edge="inspectorSelectedEdge"
         @update-label="handleUpdateLabel"
       />
     </div>
@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { useGraphStore } from '@/stores/graphStore';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import Toolbar from './Toolbar.vue';
@@ -51,11 +51,41 @@ const currentZoom = ref(1);
 const graphStore = useGraphStore();
 const workflowStore = useWorkflowStore();
 
+interface NodeData {
+  type?: string;
+  label?: string;
+}
+
+interface InspectorNode {
+  data?: NodeData;
+  getData?: () => NodeData;
+  label?: string;
+  position: () => { x: number; y: number };
+  setLabel?: (label: string) => void;
+}
+
+interface EdgeLineAttrs {
+  stroke?: string;
+}
+
+interface EdgeAttrs {
+  line?: EdgeLineAttrs;
+}
+
+interface InspectorEdge {
+  getSourceCellId: () => string | undefined;
+  getTargetCellId: () => string | undefined;
+  attrs?: EdgeAttrs | null;
+  setAttrs?: (...args: unknown[]) => unknown;
+  attr: (path: string, value: string) => void;
+}
+
+const inspectorSelectedNode = computed(() => graphStore.selectedNode as InspectorNode | null);
+const inspectorSelectedEdge = computed(() => graphStore.selectedEdge as InspectorEdge | null);
+
 const {
   initGraph,
   graphRef,
-  selectedNode,
-  selectedEdge,
   exportWorkflow,
   importWorkflow,
   clearCanvas,
@@ -103,13 +133,18 @@ const updateZoom = () => {
   }
 };
 
+interface History {
+  undo?: () => void;
+  redo?: () => void;
+}
+
 const handleUndo = () => {
-  const history = (graphRef as any)?.history;
+  const history = (graphRef as unknown as { history?: History })?.history;
   history?.undo?.();
 };
 
 const handleRedo = () => {
-  const history = (graphRef as any)?.history;
+  const history = (graphRef as unknown as { history?: History })?.history;
   history?.redo?.();
 };
 
@@ -167,5 +202,7 @@ const handleAddNode = (type: string) => {
   addNode(type, x, y);
 };
 
-const handleUpdateLabel = (_label: string) => {};
+const handleUpdateLabel = (label: string) => {
+  console.log('Update label:', label);
+};
 </script>

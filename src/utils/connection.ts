@@ -1,11 +1,23 @@
 import type { Graph } from '@antv/x6';
 import { nodeRegistry } from '@/config/workflow/node-registry';
 
+interface CellData {
+  type?: string;
+}
+
+interface Cell {
+  data?: CellData;
+}
+
+interface Magnet {
+  getAttribute: (name: string) => string | null;
+}
+
 export function validateConnection(
-  sourceCell: any,
-  targetCell: any,
-  sourceMagnet: any,
-  targetMagnet: any
+  sourceCell: Cell | null | undefined,
+  targetCell: Cell | null | undefined,
+  sourceMagnet: Magnet | null | undefined,
+  targetMagnet: Magnet | null | undefined
 ) {
   if (!sourceMagnet) return { valid: false, reason: '源连接点不存在' };
   if (!targetMagnet) return { valid: false, reason: '目标连接点不存在' };

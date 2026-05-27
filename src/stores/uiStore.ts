@@ -47,20 +47,29 @@ export const useUiStore = defineStore('ui', () => {
       },
     });
 
+    interface NodeData {
+      type: string;
+    }
+
+    interface NodeWithData {
+      getData: () => NodeData;
+      position: () => { x: number; y: number };
+    }
+
     const dnd = new Dnd({
       target: graphStore.graphRef as unknown as Graph,
       getDropNode: (node: Node) => {
         return node.clone() as Node;
       },
-      validateNode: (droppingNode, _options) => {
-        const nodeData = droppingNode.getData() as { type: string };
+      validateNode: (droppingNode: NodeWithData) => {
+        const nodeData = droppingNode.getData();
         const position = droppingNode.position();
 
         const nodesUnder = (graphStore.graphRef as unknown as Graph).getNodesFromPoint(
           position.x,
           position.y
         );
-        const nodeUnder = nodesUnder[0];
+        const nodeUnder = nodesUnder[0] as NodeWithData | undefined;
 
         if (loopNodeTypes.includes(nodeData.type)) {
           if (!nodeUnder || nodeUnder.getData()?.type !== 'LOOP') {
@@ -73,7 +82,7 @@ export const useUiStore = defineStore('ui', () => {
       },
     });
 
-    dnd.start(templateNode, event as any);
+    dnd.start(templateNode, event);
     endDrag();
   };
 

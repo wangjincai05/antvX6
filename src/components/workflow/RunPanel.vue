@@ -57,9 +57,13 @@ const { graphRef } = graphStore;
 const executionStates = computed(() => workflowState.executionStates);
 const progress = computed(() => getExecutionProgress());
 
+interface NodeWithLabel {
+  label?: string;
+}
+
 const getNodeLabel = (nodeId: string): string => {
   const node = graphRef?.getCellById(nodeId);
-  return (node as any)?.label || nodeId;
+  return (node as unknown as NodeWithLabel)?.label || nodeId;
 };
 
 const getStateClass = (status: string): string => {

@@ -1,16 +1,30 @@
-export function topologySort(graph: any): string[] {
+interface TopoGraphNode {
+  id: string;
+}
+
+interface TopoGraphEdge {
+  getSourceCellId: () => string | undefined;
+  getTargetCellId: () => string | undefined;
+}
+
+interface TopoGraph {
+  getNodes: () => TopoGraphNode[];
+  getEdges: () => TopoGraphEdge[];
+}
+
+export function topologySort(graph: TopoGraph): string[] {
   const nodes = graph.getNodes();
   const edges = graph.getEdges();
 
   const inDegree: Record<string, number> = {};
   const adjacencyList: Record<string, string[]> = {};
 
-  nodes.forEach((node: any) => {
+  nodes.forEach((node: TopoGraphNode) => {
     inDegree[node.id] = 0;
     adjacencyList[node.id] = [];
   });
 
-  edges.forEach((edge: any) => {
+  edges.forEach((edge: TopoGraphEdge) => {
     const source = edge.getSourceCellId();
     const target = edge.getTargetCellId();
     if (source && target) {
@@ -46,7 +60,7 @@ export function topologySort(graph: any): string[] {
   return result;
 }
 
-export function getExecutionOrder(graph: any): string[] {
+export function getExecutionOrder(graph: TopoGraph): string[] {
   try {
     return topologySort(graph);
   } catch {
@@ -54,11 +68,11 @@ export function getExecutionOrder(graph: any): string[] {
   }
 }
 
-export function getNodeDependencies(graph: any, nodeId: string): string[] {
+export function getNodeDependencies(graph: TopoGraph, nodeId: string): string[] {
   const edges = graph.getEdges();
   const dependencies: string[] = [];
 
-  edges.forEach((edge: any) => {
+  edges.forEach((edge: TopoGraphEdge) => {
     if (edge.getTargetCellId() === nodeId) {
       const source = edge.getSourceCellId();
       if (source && !dependencies.includes(source)) {
@@ -70,11 +84,11 @@ export function getNodeDependencies(graph: any, nodeId: string): string[] {
   return dependencies;
 }
 
-export function getNodeDependents(graph: any, nodeId: string): string[] {
+export function getNodeDependents(graph: TopoGraph, nodeId: string): string[] {
   const edges = graph.getEdges();
   const dependents: string[] = [];
 
-  edges.forEach((edge: any) => {
+  edges.forEach((edge: TopoGraphEdge) => {
     if (edge.getSourceCellId() === nodeId) {
       const target = edge.getTargetCellId();
       if (target && !dependents.includes(target)) {

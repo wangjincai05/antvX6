@@ -1,13 +1,28 @@
-export function detectCycle(graph: any): { hasCycle: boolean; cycle?: string[] } {
+interface GraphNode {
+  id: string;
+  data?: { type?: string };
+}
+
+interface GraphEdge {
+  getSourceCellId: () => string | undefined;
+  getTargetCellId: () => string | undefined;
+}
+
+interface Graph {
+  getNodes: () => GraphNode[];
+  getEdges: () => GraphEdge[];
+}
+
+export function detectCycle(graph: Graph): { hasCycle: boolean; cycle?: string[] } {
   const nodes = graph.getNodes();
   const edges = graph.getEdges();
 
   const adjacencyList: Record<string, string[]> = {};
-  nodes.forEach((node: any) => {
+  nodes.forEach((node: GraphNode) => {
     adjacencyList[node.id] = [];
   });
 
-  edges.forEach((edge: any) => {
+  edges.forEach((edge: GraphEdge) => {
     const source = edge.getSourceCellId();
     const target = edge.getTargetCellId();
     if (source && target) {
@@ -48,7 +63,7 @@ export function detectCycle(graph: any): { hasCycle: boolean; cycle?: string[] }
   return { hasCycle: false };
 }
 
-export function validateWorkflow(graph: any): { valid: boolean; errors: string[] } {
+export function validateWorkflow(graph: Graph): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
   const { hasCycle, cycle } = detectCycle(graph);
@@ -61,14 +76,14 @@ export function validateWorkflow(graph: any): { valid: boolean; errors: string[]
     errors.push('工作流为空');
   }
 
-  const startNodes = nodes.filter((node: any) => node.data?.type === 'INPUT');
+  const startNodes = nodes.filter((node: GraphNode) => node.data?.type === 'INPUT');
   if (startNodes.length === 0) {
     errors.push('缺少开始节点');
   } else if (startNodes.length > 1) {
     errors.push('只能有一个开始节点');
   }
 
-  const endNodes = nodes.filter((node: any) => node.data?.type === 'OUTPUT');
+  const endNodes = nodes.filter((node: GraphNode) => node.data?.type === 'OUTPUT');
   if (endNodes.length === 0) {
     errors.push('缺少结束节点');
   }
