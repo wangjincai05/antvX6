@@ -22,6 +22,25 @@ export const useGraphStore = defineStore('graph', () => {
     remove?: () => void;
   }
 
+  const showStatusMessage = (message: string, duration: number = 2000) => {
+    statusMessage.value = message;
+    setTimeout(() => {
+      if (statusMessage.value === message) {
+        statusMessage.value = null;
+      }
+    }, duration);
+  };
+
+  const enableKeyboard = () => {
+    keyboardEnabled.value = true;
+    graphRef.value?.enableKeyboard();
+  };
+
+  const disableKeyboard = () => {
+    keyboardEnabled.value = false;
+    graphRef.value?.disableKeyboard();
+  };
+
   const initGraph = (container: HTMLElement) => {
     register({
       shape: 'workflow-node',
@@ -86,6 +105,7 @@ export const useGraphStore = defineStore('graph', () => {
     );
 
     graphRef.value.on('node:click', ({ node }: { node: Node }) => {
+      node.toFront();
       selectedNode.value = node;
       selectedEdge.value = null;
     });
