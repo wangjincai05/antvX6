@@ -99,3 +99,36 @@ export const edgeStyle = {
   },
   zIndex: 0,
 };
+
+export const edgeHighlightStyle = {
+  attrs: {
+    line: {
+      stroke: '#ff4d4f',
+      strokeWidth: 3,
+    },
+  },
+};
+
+export const edgeDeleteIcon = {
+  attrs: {
+    body: {
+      fill: '#ff4d4f',
+      stroke: '#fff',
+      strokeWidth: 2,
+      rx: 12,
+      ry: 12,
+    },
+    label: {
+      text: '×',
+      fill: '#fff',
+      fontSize: 18,
+      fontWeight: 'bold',
+      textAnchor: 'middle',
+      textVerticalAnchor: 'middle',
+    },
+  },
+  width: 24,
+  height: 24,
+  x: -12,
+  y: -12,
+};

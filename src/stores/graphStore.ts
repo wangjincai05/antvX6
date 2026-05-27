@@ -2,7 +2,12 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { Graph, Node, Edge, Selection, History, Keyboard } from '@antv/x6';
 import { register } from '@antv/x6-vue-shape';
-import { defaultGraphOptions, nodeStyle, edgeStyle } from '@/config/workflow/graph-options';
+import {
+  defaultGraphOptions,
+  nodeStyle,
+  edgeStyle,
+  edgeHighlightStyle,
+} from '@/config/workflow/graph-options';
 import { nodeRegistry, portGroups, portInteractionStyles } from '@/config/workflow/node-registry';
 import type { NodeData, EdgeData } from '@/types/workflow';
 import WorkflowNode from '@/components/workflow/WorkflowNode.vue';
@@ -86,7 +91,7 @@ export const useGraphStore = defineStore('graph', () => {
             targetCell,
             sourceMagnet,
             targetMagnet,
-            graphRef.value
+            graphRef.value!
           );
           if (!result.valid) {
             console.log('Connection validation failed:', result.reason);
@@ -128,13 +133,12 @@ export const useGraphStore = defineStore('graph', () => {
       new History({
         enabled: true,
         beforeAddCommand(event, args) {
-          if (args.key) {
-            // 禁止删除按钮及样式切换添加到 Undo 队列中
-            if (['tools', 'attrs', 'ports', 'labels', 'zIndex'].includes(args.key)) {
-              return false;
-            }
-            return true;
+          if (!args) return true;
+          const arg = args as { key?: string };
+          if (arg.key && ['tools', 'attrs', 'ports', 'labels', 'zIndex'].includes(arg.key)) {
+            return false;
           }
+          return true;
         },
       })
     );
@@ -148,6 +152,14 @@ export const useGraphStore = defineStore('graph', () => {
     graphRef.value.on('edge:click', ({ edge }: { edge: Edge }) => {
       selectedEdge.value = edge;
       selectedNode.value = null;
+    });
+
+    graphRef.value.on('edge:mouseenter', ({ edge }: { edge: Edge }) => {
+      highlightEdge(edge, true);
+    });
+
+    graphRef.value.on('edge:mouseleave', ({ edge }: { edge: Edge }) => {
+      highlightEdge(edge, false);
     });
 
     graphRef.value.on('node:mouseover', ({ node }: { node: Node }) => {
@@ -484,6 +496,59 @@ export const useGraphStore = defineStore('graph', () => {
         nodeWithPorts.portProp(port.id || '', 'attrs/circle/r', targetR);
       }
     });
+  };
+
+  interface EdgeWithAttrs {
+    setAttrs: (attrs: Record<string, unknown>) => void;
+    attr: (path: string, value?: unknown) => unknown;
+    remove: () => void;
+    isHighlighted?: boolean;
+    addTools: (tools: unknown[]) => void;
+    removeTools: () => void;
+  }
+
+  const highlightEdge = (edge: Edge, highlight: boolean) => {
+    const edgeWithAttrs = edge as unknown as EdgeWithAttrs;
+
+    if (highlight) {
+      edgeWithAttrs.attr('line/stroke', '#ff4d4f');
+      edgeWithAttrs.attr('line/strokeWidth', 3);
+
+      edgeWithAttrs.addTools([
+        {
+          name: 'target-arrowhead',
+          args: {
+            attrs: {
+              fill: '#ff4d4f',
+            },
+          },
+        },
+        {
+          name: 'button-remove',
+          args: {
+            attrs: {
+              body: {
+                fill: '#ff4d4f',
+                stroke: '#fff',
+                strokeWidth: 2,
+              },
+              label: {
+                fill: '#fff',
+              },
+            },
+            distance: -40,
+            onClick: () => {
+              edge.remove();
+              showStatusMessage('连线已删除');
+            },
+          },
+        },
+      ]);
+    } else {
+      edgeWithAttrs.attr('line/stroke', '#5f95ff');
+      edgeWithAttrs.attr('line/strokeWidth', 2);
+      edgeWithAttrs.removeTools();
+    }
   };
 
   return {
