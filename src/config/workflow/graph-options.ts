@@ -1,11 +1,24 @@
+import {
+  COLORS,
+  ZOOM_MIN,
+  ZOOM_MAX,
+  NODE_WIDTH,
+  NODE_HEIGHT,
+  GRID_CONFIG,
+  SNAP_CONFIG,
+  CONNECTION_CONFIG,
+  EDGE_CONFIG,
+  NODE_CONFIG,
+} from '@/config/constants';
+
 export const defaultGraphOptions = {
   grid: {
-    size: 1,
+    size: GRID_CONFIG.size,
     visible: true,
     type: 'dot',
     args: {
-      color: '#d0d0d0',
-      thickness: 1,
+      color: GRID_CONFIG.color,
+      thickness: GRID_CONFIG.thickness,
     },
   },
   panning: {
@@ -15,8 +28,8 @@ export const defaultGraphOptions = {
   mousewheel: {
     enabled: true,
     modifiers: 'ctrl',
-    minScale: 0.2,
-    maxScale: 2,
+    minScale: ZOOM_MIN,
+    maxScale: ZOOM_MAX,
   },
   selecting: {
     enabled: true,
@@ -33,23 +46,23 @@ export const defaultGraphOptions = {
   keyboard: true,
   clipboard: true,
   background: {
-    color: '#f2f3f5',
+    color: COLORS.background,
   },
   connecting: {
-    router: 'manhattan',
+    router: CONNECTION_CONFIG.router,
     connector: {
       name: 'rounded',
       args: {
-        radius: 8,
+        radius: CONNECTION_CONFIG.connectorRadius,
       },
     },
-    anchor: 'center',
-    connectionPoint: 'anchor',
+    anchor: CONNECTION_CONFIG.anchor,
+    connectionPoint: CONNECTION_CONFIG.connectionPoint,
     allowBlank: false,
     allowLoop: false,
     highlight: true,
     snap: {
-      radius: 50,
+      radius: SNAP_CONFIG.radius,
     },
   },
   highlighting: {
@@ -58,8 +71,8 @@ export const defaultGraphOptions = {
       args: {
         padding: 8,
         attrs: {
-          fill: '#fff',
-          stroke: '#31d0c6',
+          fill: COLORS.nodeFill,
+          stroke: COLORS.info,
           strokeWidth: 4,
         },
       },
@@ -69,19 +82,19 @@ export const defaultGraphOptions = {
 
 export const nodeStyle = {
   shape: 'workflow-node',
-  width: 200,
-  height: 70,
+  width: NODE_WIDTH,
+  height: NODE_HEIGHT,
   attrs: {
     body: {
-      fill: '#ffffff',
-      stroke: '#5f95ff',
-      strokeWidth: 2,
-      rx: 8,
-      ry: 8,
+      fill: COLORS.nodeFill,
+      stroke: COLORS.primary,
+      strokeWidth: NODE_CONFIG.strokeWidth,
+      rx: NODE_CONFIG.borderRadius,
+      ry: NODE_CONFIG.borderRadius,
     },
     label: {
-      fontSize: 14,
-      fill: '#333333',
+      fontSize: NODE_CONFIG.labelFontSize,
+      fill: COLORS.text,
     },
   },
 };
@@ -89,11 +102,11 @@ export const nodeStyle = {
 export const edgeStyle = {
   attrs: {
     line: {
-      stroke: '#5f95ff',
-      strokeWidth: 2,
+      stroke: COLORS.primary,
+      strokeWidth: EDGE_CONFIG.strokeWidth,
       targetMarker: {
         name: 'classic',
-        size: 8,
+        size: EDGE_CONFIG.targetMarkerSize,
       },
     },
   },
@@ -103,8 +116,8 @@ export const edgeStyle = {
 export const edgeHighlightStyle = {
   attrs: {
     line: {
-      stroke: '#ff4d4f',
-      strokeWidth: 3,
+      stroke: COLORS.error,
+      strokeWidth: EDGE_CONFIG.highlightStrokeWidth,
     },
   },
 };
@@ -112,15 +125,15 @@ export const edgeHighlightStyle = {
 export const edgeDeleteIcon = {
   attrs: {
     body: {
-      fill: '#ff4d4f',
-      stroke: '#fff',
+      fill: COLORS.error,
+      stroke: COLORS.nodeFill,
       strokeWidth: 2,
       rx: 12,
       ry: 12,
     },
     label: {
       text: '×',
-      fill: '#fff',
+      fill: COLORS.nodeFill,
       fontSize: 18,
       fontWeight: 'bold',
       textAnchor: 'middle',

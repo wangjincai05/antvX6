@@ -1,3 +1,5 @@
+import { COLORS, PORT_COLORS } from '@/config/constants';
+
 export interface NodeConfig {
   type: string;
   name: string;
@@ -210,8 +212,8 @@ export const portInteractionStyles = {
   },
   portHover: {
     r: 8,
-    fill: '#5f95ff',
-    stroke: '#5f95ff',
+    fill: COLORS.primary,
+    stroke: COLORS.primary,
   },
 };
 
@@ -222,9 +224,9 @@ export const portGroups = {
       circle: {
         r: portInteractionStyles.default.r,
         magnet: true,
-        stroke: '#5f95ff',
+        stroke: PORT_COLORS.input,
         strokeWidth: 2,
-        fill: '#fff',
+        fill: COLORS.nodeFill,
       },
     },
   },
@@ -234,9 +236,9 @@ export const portGroups = {
       circle: {
         r: portInteractionStyles.default.r,
         magnet: true,
-        stroke: '#52c41a',
+        stroke: PORT_COLORS.output,
         strokeWidth: 2,
-        fill: '#fff',
+        fill: COLORS.nodeFill,
       },
     },
   },
@@ -246,9 +248,9 @@ export const portGroups = {
       circle: {
         r: portInteractionStyles.default.r,
         magnet: true,
-        stroke: '#5f95ff',
+        stroke: PORT_COLORS.input,
         strokeWidth: 2,
-        fill: '#fff',
+        fill: COLORS.nodeFill,
       },
     },
   },
@@ -258,9 +260,9 @@ export const portGroups = {
       circle: {
         r: portInteractionStyles.default.r,
         magnet: true,
-        stroke: '#52c41a',
+        stroke: PORT_COLORS.output,
         strokeWidth: 2,
-        fill: '#fff',
+        fill: COLORS.nodeFill,
       },
     },
   },

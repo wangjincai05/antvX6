@@ -1,5 +1,5 @@
 <template>
-  <div class="w-72 bg-white border-l border-gray-200 flex flex-col" v-if="selectedNode">
+  <div class="w-72 bg-white border-l border-gray-200 flex flex-col" v-show="showPanel">
     <div class="p-4 border-b border-gray-200">
       <div class="flex items-center gap-2">
         <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,19 +54,55 @@
           </div>
         </div>
         <div>
-          <label class="block text-xs text-gray-500 mb-2">联动属性</label>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-xs text-gray-500">联动属性</label>
+            <button class="text-xs text-blue-500 hover:text-blue-600" @click="addProperty">
+              + 添加
+            </button>
+          </div>
           <div class="space-y-2">
             <div
               v-for="(property, key) in linkedProperties"
               :key="key"
-              class="flex items-center justify-between p-2 bg-blue-50 rounded"
+              class="flex items-center gap-2 p-2 bg-blue-50 rounded"
             >
-              <span class="text-sm text-gray-600">{{ key }}</span>
-              <span class="text-xs text-blue-600">{{ property }}</span>
+              <input
+                :value="key"
+                type="text"
+                class="flex-1 px-2 py-1 text-sm border border-transparent bg-transparent focus:outline-none focus:border-blue-300 rounded"
+                @blur="updatePropertyKey($event, key)"
+              />
+              <input
+                :value="property"
+                type="text"
+                class="flex-1 px-2 py-1 text-sm border border-transparent bg-transparent focus:outline-none focus:border-blue-300 rounded"
+                @blur="updatePropertyValue(key, $event)"
+              />
+              <button
+                class="text-gray-400 hover:text-red-500 transition-colors"
+                @click="removeProperty(key)"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
       </div>
+    </div>
+    <div class="p-4 border-t border-gray-200">
+      <button
+        class="w-full px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
+        @click="saveProperties"
+      >
+        保存属性
+      </button>
     </div>
   </div>
 </template>
@@ -82,14 +118,17 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'updateLabel', label: string): void;
+  (e: 'updateProperties', properties: Record<string, string>): void;
 }>();
 
 const nodeLabel = ref('');
 
+const showPanel = ref(false);
+
 const linkedProperties = ref<Record<string, string>>({
-  执行超时: '30秒',
-  重试次数: '3次',
-  错误处理: '继续执行',
+  executionTimeout: '30秒',
+  retryCount: '3次',
+  errorHandling: '继续执行',
 });
 
 const nodeTypes = computed(() => Object.values(nodeRegistry));
@@ -103,9 +142,18 @@ watch(
   () => props.selectedNode,
   (node) => {
     if (node) {
+      showPanel.value = true;
       const nodeData = node.getData?.() || {};
       nodeLabel.value = node.label || nodeData.label || '';
+      if (nodeData.properties) {
+        linkedProperties.value = Object.fromEntries(
+          Object.entries(nodeData.properties).map(([k, v]) => [k, String(v)])
+        );
+      }
+    } else {
+      showPanel.value = false;
     }
+    console.log(showPanel.value);
   }
 );
 
@@ -114,5 +162,33 @@ const updateNodeLabel = () => {
     props.selectedNode.setLabel?.(nodeLabel.value);
     emit('updateLabel', nodeLabel.value);
   }
+};
+
+const addProperty = () => {
+  const newKey = `property_${Date.now()}`;
+  linkedProperties.value[newKey] = '';
+};
+
+const removeProperty = (key: string) => {
+  delete linkedProperties.value[key];
+};
+
+const updatePropertyKey = (event: Event, oldKey: string) => {
+  const target = event.target as HTMLInputElement;
+  const newKey = target.value.trim();
+  if (newKey && newKey !== oldKey) {
+    const value = linkedProperties.value[oldKey];
+    delete linkedProperties.value[oldKey];
+    linkedProperties.value[newKey] = value;
+  }
+};
+
+const updatePropertyValue = (key: string, event: Event) => {
+  const target = event.target as HTMLInputElement;
+  linkedProperties.value[key] = target.value;
+};
+
+const saveProperties = () => {
+  emit('updateProperties', { ...linkedProperties.value });
 };
 </script>

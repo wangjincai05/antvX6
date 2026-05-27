@@ -1,21 +1,4 @@
-interface CellData {
-  type?: string;
-}
-
-interface Cell {
-  data?: CellData;
-  id?: string;
-  getEdges?: () => Edge[];
-}
-
-interface Edge {
-  getSourceCellId?: () => string | undefined;
-  getTargetCellId?: () => string | undefined;
-}
-
-interface Magnet {
-  getAttribute: (name: string) => string | null;
-}
+import type { Cell, GraphEdge, Magnet } from '@/types';
 
 export const OUTPUT_PORT_GROUPS = ['right', 'bottom'];
 export const INPUT_PORT_GROUPS = ['left', 'top'];
@@ -33,7 +16,7 @@ export function validateConnection(
   targetCell: unknown,
   sourceMagnet: unknown,
   targetMagnet: unknown,
-  graph?: { getEdges: () => Edge[] }
+  graph?: { getEdges: () => GraphEdge[] }
 ) {
   if (!sourceMagnet) return { valid: false, reason: '源连接点不存在' };
   if (!targetMagnet) return { valid: false, reason: '目标连接点不存在' };

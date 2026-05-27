@@ -6,6 +6,15 @@ import { useGraphStore } from './graphStore';
 
 const loopNodeTypes = ['LOOP_BREAK'];
 
+const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+  (window as unknown as { $toast: (options: { message: string; type?: string }) => void }).$toast?.(
+    {
+      message,
+      type,
+    }
+  );
+};
+
 export const useUiStore = defineStore('ui', () => {
   const isDragging = ref(false);
   const dragNodeType = ref<string | null>(null);
@@ -73,7 +82,7 @@ export const useUiStore = defineStore('ui', () => {
 
         if (loopNodeTypes.includes(nodeData.type)) {
           if (!nodeUnder || nodeUnder.getData()?.type !== 'LOOP') {
-            alert(`${config.name}节点只能放置在循环节点内`);
+            showToast(`${config.name}节点只能放置在循环节点内`, 'warning');
             return false;
           }
         }

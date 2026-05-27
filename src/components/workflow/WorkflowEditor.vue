@@ -15,7 +15,11 @@
         <div ref="containerRef" class="flex-1 bg-gray-50" />
         <RunPanel v-if="showRunPanel" class="border-t border-gray-200" />
       </div>
-      <InspectorPanel :selected-node="inspectorSelectedNode" @update-label="handleUpdateLabel" />
+      <InspectorPanel
+        :selected-node="inspectorSelectedNode"
+        @update-label="handleUpdateLabel"
+        @update-properties="handleUpdateProperties"
+      />
     </div>
 
     <BottomToolbar
@@ -44,11 +48,14 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { useGraphStore } from '@/stores/graphStore';
 import { useWorkflowStore } from '@/stores/workflowStore';
-import type { InspectorNode, InspectorEdge } from '@/types/inspector';
+import { useToast } from '@/composables/useToast';
+import type { InspectorNode } from '@/types/inspector';
 import Toolbar from './Toolbar.vue';
 import BottomToolbar from './BottomToolbar.vue';
 import InspectorPanel from './InspectorPanel.vue';
 import RunPanel from './RunPanel.vue';
+
+const toast = useToast();
 
 const showRunPanel = ref(false);
 const containerRef = ref<HTMLElement | null>(null);
@@ -57,7 +64,9 @@ const currentZoom = ref(1);
 const graphStore = useGraphStore();
 const workflowStore = useWorkflowStore();
 
-const inspectorSelectedNode = computed(() => graphStore.selectedNode as InspectorNode | null);
+const inspectorSelectedNode = computed(
+  () => graphStore.selectionStore.selectedNode as InspectorNode | null
+);
 
 const {
   initGraph,
@@ -70,6 +79,8 @@ const {
   resetZoom,
   addNode,
   statusMessage,
+  updateNodeLabel,
+  updateNodeProperty,
 } = graphStore;
 
 const { startExecution, stopExecution, workflowState } = workflowStore;
@@ -162,7 +173,7 @@ const handleImport = () => {
 const handleRun = async () => {
   const result = await startExecution();
   if (!result.success) {
-    alert(result.errors.join('\n'));
+    toast.error(result.errors.join('\n'));
   }
 };
 
@@ -180,7 +191,17 @@ const handleAddNode = (type: string) => {
 };
 
 const handleUpdateLabel = (label: string) => {
-  console.log('Update label:', label);
+  if (graphStore.selectionStore.selectedNode) {
+    updateNodeLabel(graphStore.selectionStore.selectedNode.id, label);
+  }
+};
+
+const handleUpdateProperties = (properties: Record<string, string>) => {
+  if (graphStore.selectionStore.selectedNode) {
+    Object.entries(properties).forEach(([key, value]) => {
+      updateNodeProperty(graphStore.selectionStore.selectedNode!.id, key, value);
+    });
+  }
 };
 </script>
 

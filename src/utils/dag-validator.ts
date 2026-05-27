@@ -1,17 +1,4 @@
-interface GraphNode {
-  id: string;
-  data?: { type?: string };
-}
-
-interface GraphEdge {
-  getSourceCellId: () => string | undefined;
-  getTargetCellId: () => string | undefined;
-}
-
-interface Graph {
-  getNodes: () => GraphNode[];
-  getEdges: () => GraphEdge[];
-}
+import type { Graph, GraphNode, GraphEdge } from '@/types';
 
 export function detectCycle(graph: Graph): { hasCycle: boolean; cycle?: string[] } {
   const nodes = graph.getNodes();
