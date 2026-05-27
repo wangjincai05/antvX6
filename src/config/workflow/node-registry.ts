@@ -1,10 +1,10 @@
 export interface NodeConfig {
-  type: string
-  name: string
-  icon: string
-  iconType: 'emoji' | 'image'
-  description: string
-  ports: { group: string; id: string }[]
+  type: string;
+  name: string;
+  icon: string;
+  iconType: 'emoji' | 'image';
+  description: string;
+  ports: { group: string; id: string }[];
 }
 
 export const nodeRegistry: Record<string, NodeConfig> = {
@@ -16,8 +16,8 @@ export const nodeRegistry: Record<string, NodeConfig> = {
     description: '工作流的起始节点，用于设定启动工作流需要的信息',
     ports: [
       { group: 'bottom', id: 'out-bottom' },
-      { group: 'right', id: 'out-right' }
-    ]
+      { group: 'right', id: 'out-right' },
+    ],
   },
   OUTPUT: {
     type: 'OUTPUT',
@@ -27,8 +27,8 @@ export const nodeRegistry: Record<string, NodeConfig> = {
     description: '工作流的Web界面输出节点，用于显示工作流运行过程的结果信息',
     ports: [
       { group: 'top', id: 'in-top' },
-      { group: 'left', id: 'in-left' }
-    ]
+      { group: 'left', id: 'in-left' },
+    ],
   },
   LLM: {
     type: 'LLM',
@@ -40,8 +40,8 @@ export const nodeRegistry: Record<string, NodeConfig> = {
       { group: 'top', id: 'in-top' },
       { group: 'left', id: 'in-left' },
       { group: 'bottom', id: 'out-bottom' },
-      { group: 'right', id: 'out-right' }
-    ]
+      { group: 'right', id: 'out-right' },
+    ],
   },
   KNOWLEDGE_BASE: {
     type: 'KNOWLEDGE_BASE',
@@ -53,8 +53,8 @@ export const nodeRegistry: Record<string, NodeConfig> = {
       { group: 'top', id: 'in-top' },
       { group: 'left', id: 'in-left' },
       { group: 'bottom', id: 'out-bottom' },
-      { group: 'right', id: 'out-right' }
-    ]
+      { group: 'right', id: 'out-right' },
+    ],
   },
   PYTHON_CODE: {
     type: 'PYTHON_CODE',
@@ -66,8 +66,8 @@ export const nodeRegistry: Record<string, NodeConfig> = {
       { group: 'top', id: 'in-top' },
       { group: 'left', id: 'in-left' },
       { group: 'bottom', id: 'out-bottom' },
-      { group: 'right', id: 'out-right' }
-    ]
+      { group: 'right', id: 'out-right' },
+    ],
   },
   HTTP: {
     type: 'HTTP',
@@ -79,8 +79,8 @@ export const nodeRegistry: Record<string, NodeConfig> = {
       { group: 'top', id: 'in-top' },
       { group: 'left', id: 'in-left' },
       { group: 'bottom', id: 'out-bottom' },
-      { group: 'right', id: 'out-right' }
-    ]
+      { group: 'right', id: 'out-right' },
+    ],
   },
   BRANCH: {
     type: 'BRANCH',
@@ -92,8 +92,8 @@ export const nodeRegistry: Record<string, NodeConfig> = {
       { group: 'top', id: 'in-top' },
       { group: 'left', id: 'in-left' },
       { group: 'bottom', id: 'out-bottom' },
-      { group: 'right', id: 'out-right' }
-    ]
+      { group: 'right', id: 'out-right' },
+    ],
   },
   LOOP: {
     type: 'LOOP',
@@ -105,8 +105,8 @@ export const nodeRegistry: Record<string, NodeConfig> = {
       { group: 'top', id: 'in-top' },
       { group: 'left', id: 'in-left' },
       { group: 'bottom', id: 'out-bottom' },
-      { group: 'right', id: 'out-right' }
-    ]
+      { group: 'right', id: 'out-right' },
+    ],
   },
   LOOP_BREAK: {
     type: 'LOOP_BREAK',
@@ -118,8 +118,8 @@ export const nodeRegistry: Record<string, NodeConfig> = {
       { group: 'top', id: 'in-top' },
       { group: 'left', id: 'in-left' },
       { group: 'bottom', id: 'out-bottom' },
-      { group: 'right', id: 'out-right' }
-    ]
+      { group: 'right', id: 'out-right' },
+    ],
   },
   VAR_ASSIGN: {
     type: 'VAR_ASSIGN',
@@ -131,8 +131,8 @@ export const nodeRegistry: Record<string, NodeConfig> = {
       { group: 'top', id: 'in-top' },
       { group: 'left', id: 'in-left' },
       { group: 'bottom', id: 'out-bottom' },
-      { group: 'right', id: 'out-right' }
-    ]
+      { group: 'right', id: 'out-right' },
+    ],
   },
   VAR_AGGREGATE: {
     type: 'VAR_AGGREGATE',
@@ -144,8 +144,8 @@ export const nodeRegistry: Record<string, NodeConfig> = {
       { group: 'top', id: 'in-top' },
       { group: 'left', id: 'in-left' },
       { group: 'bottom', id: 'out-bottom' },
-      { group: 'right', id: 'out-right' }
-    ]
+      { group: 'right', id: 'out-right' },
+    ],
   },
   PLUGIN: {
     type: 'PLUGIN',
@@ -157,8 +157,8 @@ export const nodeRegistry: Record<string, NodeConfig> = {
       { group: 'top', id: 'in-top' },
       { group: 'left', id: 'in-left' },
       { group: 'bottom', id: 'out-bottom' },
-      { group: 'right', id: 'out-right' }
-    ]
+      { group: 'right', id: 'out-right' },
+    ],
   },
   AGENT: {
     type: 'AGENT',
@@ -170,8 +170,8 @@ export const nodeRegistry: Record<string, NodeConfig> = {
       { group: 'top', id: 'in-top' },
       { group: 'left', id: 'in-left' },
       { group: 'bottom', id: 'out-bottom' },
-      { group: 'right', id: 'out-right' }
-    ]
+      { group: 'right', id: 'out-right' },
+    ],
   },
   WORKFLOW: {
     type: 'WORKFLOW',
@@ -183,8 +183,8 @@ export const nodeRegistry: Record<string, NodeConfig> = {
       { group: 'top', id: 'in-top' },
       { group: 'left', id: 'in-left' },
       { group: 'bottom', id: 'out-bottom' },
-      { group: 'right', id: 'out-right' }
-    ]
+      { group: 'right', id: 'out-right' },
+    ],
   },
   FILE_EXTRACT: {
     type: 'FILE_EXTRACT',
@@ -196,24 +196,24 @@ export const nodeRegistry: Record<string, NodeConfig> = {
       { group: 'top', id: 'in-top' },
       { group: 'left', id: 'in-left' },
       { group: 'bottom', id: 'out-bottom' },
-      { group: 'right', id: 'out-right' }
-    ]
-  }
-}
+      { group: 'right', id: 'out-right' },
+    ],
+  },
+};
 
 export const portInteractionStyles = {
   default: {
-    r: 2
+    r: 2,
   },
   nodeHover: {
-    r: 6
+    r: 6,
   },
   portHover: {
     r: 8,
     fill: '#5f95ff',
-    stroke: '#5f95ff'
-  }
-}
+    stroke: '#5f95ff',
+  },
+};
 
 export const portGroups = {
   top: {
@@ -224,9 +224,9 @@ export const portGroups = {
         magnet: true,
         stroke: '#5f95ff',
         strokeWidth: 2,
-        fill: '#fff'
-      }
-    }
+        fill: '#fff',
+      },
+    },
   },
   bottom: {
     position: 'bottom' as const,
@@ -236,9 +236,9 @@ export const portGroups = {
         magnet: true,
         stroke: '#52c41a',
         strokeWidth: 2,
-        fill: '#fff'
-      }
-    }
+        fill: '#fff',
+      },
+    },
   },
   left: {
     position: 'left' as const,
@@ -248,9 +248,9 @@ export const portGroups = {
         magnet: true,
         stroke: '#5f95ff',
         strokeWidth: 2,
-        fill: '#fff'
-      }
-    }
+        fill: '#fff',
+      },
+    },
   },
   right: {
     position: 'right' as const,
@@ -260,10 +260,8 @@ export const portGroups = {
         magnet: true,
         stroke: '#52c41a',
         strokeWidth: 2,
-        fill: '#fff'
-      }
-    }
-  }
-}
-
-
+        fill: '#fff',
+      },
+    },
+  },
+};

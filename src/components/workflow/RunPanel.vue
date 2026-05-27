@@ -3,7 +3,12 @@
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2">
         <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 10V3L4 14h7v7l9-11h-7z"
+          />
         </svg>
         <h3 class="font-medium text-gray-800">执行状态</h3>
       </div>
@@ -39,57 +44,57 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useExecutor } from '@/composables/workflow/useExecutor'
-import { useGraph } from '@/composables/workflow/useGraph'
+import { computed } from 'vue';
+import { useExecutor } from '@/composables/workflow/useExecutor';
+import { useGraph } from '@/composables/workflow/useGraph';
 
-const { workflowState, getExecutionProgress } = useExecutor()
-const { graphRef } = useGraph()
+const { workflowState, getExecutionProgress } = useExecutor();
+const { graphRef } = useGraph();
 
-const executionStates = computed(() => workflowState.value.executionStates)
-const progress = computed(() => getExecutionProgress())
+const executionStates = computed(() => workflowState.value.executionStates);
+const progress = computed(() => getExecutionProgress());
 
 const getNodeLabel = (nodeId: string): string => {
-  const node = graphRef.value?.getCellById(nodeId)
-  return (node as any)?.label || nodeId
-}
+  const node = graphRef.value?.getCellById(nodeId);
+  return (node as any)?.label || nodeId;
+};
 
 const getStateClass = (status: string): string => {
   switch (status) {
     case 'running':
-      return 'bg-blue-50'
+      return 'bg-blue-50';
     case 'completed':
-      return 'bg-green-50'
+      return 'bg-green-50';
     case 'error':
-      return 'bg-red-50'
+      return 'bg-red-50';
     default:
-      return 'bg-gray-50'
+      return 'bg-gray-50';
   }
-}
+};
 
 const getStateDotClass = (status: string): string => {
   switch (status) {
     case 'running':
-      return 'bg-blue-500 animate-pulse'
+      return 'bg-blue-500 animate-pulse';
     case 'completed':
-      return 'bg-green-500'
+      return 'bg-green-500';
     case 'error':
-      return 'bg-red-500'
+      return 'bg-red-500';
     default:
-      return 'bg-gray-400'
+      return 'bg-gray-400';
   }
-}
+};
 
 const getStatusText = (status: string): string => {
   switch (status) {
     case 'running':
-      return '执行中...'
+      return '执行中...';
     case 'completed':
-      return '已完成'
+      return '已完成';
     case 'error':
-      return '执行失败'
+      return '执行失败';
     default:
-      return '等待中'
+      return '等待中';
   }
-}
+};
 </script>

@@ -51,8 +51,18 @@
       </div>
 
       <div v-if="filteredCategories.length === 0" class="p-8 text-center">
-        <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          class="w-12 h-12 text-gray-300 mx-auto mb-3"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
         <p class="text-sm text-gray-500">未找到匹配的节点</p>
       </div>
@@ -61,37 +71,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { nodeRegistry, type NodeConfig } from '@/config/workflow/node-registry'
-import { useDnd } from '@/composables/workflow/useDnd'
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { nodeRegistry, type NodeConfig } from '@/config/workflow/node-registry';
+import { useDnd } from '@/composables/workflow/useDnd';
 
 defineProps<{
-  anchor?: HTMLElement | null
-}>()
+  anchor?: HTMLElement | null;
+}>();
 
 const emit = defineEmits<{
-  (e: 'select', type: string): void
-  (e: 'close'): void
-}>()
+  (e: 'select', type: string): void;
+  (e: 'close'): void;
+}>();
 
-const panelRef = ref<HTMLElement | null>(null)
-const searchQuery = ref('')
+const panelRef = ref<HTMLElement | null>(null);
+const searchQuery = ref('');
 
-const { handleDragStart: dndHandleDragStart, handleDragOver } = useDnd()
+const { handleDragStart: dndHandleDragStart, handleDragOver } = useDnd();
 
 interface Category {
-  name: string
-  nodes: NodeConfig[]
+  name: string;
+  nodes: NodeConfig[];
 }
 
 const nodeCategories: Category[] = [
   {
     name: '大模型',
-    nodes: [
-      nodeRegistry.LLM,
-      nodeRegistry.KNOWLEDGE_BASE,
-      nodeRegistry.AGENT
-    ]
+    nodes: [nodeRegistry.LLM, nodeRegistry.KNOWLEDGE_BASE, nodeRegistry.AGENT],
   },
   {
     name: '业务逻辑',
@@ -103,77 +109,72 @@ const nodeCategories: Category[] = [
       nodeRegistry.VAR_ASSIGN,
       nodeRegistry.VAR_AGGREGATE,
       nodeRegistry.PLUGIN,
-      nodeRegistry.WORKFLOW
-    ]
+      nodeRegistry.WORKFLOW,
+    ],
   },
   {
     name: '输入&输出',
-    nodes: [
-      nodeRegistry.INPUT,
-      nodeRegistry.OUTPUT
-    ]
+    nodes: [nodeRegistry.INPUT, nodeRegistry.OUTPUT],
   },
   {
     name: '数据库',
-    nodes: [
-      nodeRegistry.FILE_EXTRACT
-    ]
+    nodes: [nodeRegistry.FILE_EXTRACT],
   },
   {
     name: '知识库&数据',
-    nodes: [
-      nodeRegistry.KNOWLEDGE_BASE,
-      nodeRegistry.HTTP
-    ]
-  }
-]
+    nodes: [nodeRegistry.KNOWLEDGE_BASE, nodeRegistry.HTTP],
+  },
+];
 
 const filteredCategories = computed(() => {
   if (!searchQuery.value) {
-    return nodeCategories
+    return nodeCategories;
   }
-  const query = searchQuery.value.toLowerCase()
-  return nodeCategories.map(category => ({
-    ...category,
-    nodes: category.nodes.filter(node =>
-      node.name.toLowerCase().includes(query) ||
-      node.description.toLowerCase().includes(query) ||
-      node.type.toLowerCase().includes(query)
-    )
-  })).filter(category => category.nodes.length > 0)
-})
+  const query = searchQuery.value.toLowerCase();
+  return nodeCategories
+    .map((category) => ({
+      ...category,
+      nodes: category.nodes.filter(
+        (node) =>
+          node.name.toLowerCase().includes(query) ||
+          node.description.toLowerCase().includes(query) ||
+          node.type.toLowerCase().includes(query)
+      ),
+    }))
+    .filter((category) => category.nodes.length > 0);
+});
 
 const maxHeight = computed(() => {
-  const canvasHeight = window.innerHeight
-  return `${Math.floor(canvasHeight * 0.6)}px`
-})
+  const canvasHeight = window.innerHeight;
+  return `${Math.floor(canvasHeight * 0.6)}px`;
+});
 
 const getIconPath = (iconName: string) => {
-  return `/src/assets/images/${iconName}.png`
-}
+  return `/src/assets/images/${iconName}.png`;
+};
 
 const handleDragStart = (event: DragEvent, nodeType: string) => {
-  dndHandleDragStart(event, nodeType)
-  emit('close')
-}
+  dndHandleDragStart(event, nodeType);
+  emit('close');
+};
 
 const handleSelect = (type: string) => {
-  emit('select', type)
-}
+  emit('select', type);
+};
 
 const handleClickOutside = (event: MouseEvent) => {
   if (panelRef.value && !panelRef.value.contains(event.target as Node)) {
-    emit('close')
+    emit('close');
   }
-}
+};
 
 onMounted(() => {
-  document.addEventListener('mousedown', handleClickOutside)
-})
+  document.addEventListener('mousedown', handleClickOutside);
+});
 
 onUnmounted(() => {
-  document.removeEventListener('mousedown', handleClickOutside)
-})
+  document.removeEventListener('mousedown', handleClickOutside);
+});
 </script>
 
 <style scoped>

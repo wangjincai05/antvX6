@@ -13,7 +13,7 @@ export const getIconPath = (iconName?: string): string => {
     'icon-end': '/src/assets/images/icon-end.png',
     'icon-extract': '/src/assets/images/icon-database.png',
     'icon-loopEnd': '/src/assets/images/icon-loopEnd.png',
-    'icon-loop': '/src/assets/images/icon-loop.png'
-  }
-  return iconMap[iconName || ''] || '/src/assets/images/icon-variable.png'
-}
+    'icon-loop': '/src/assets/images/icon-loop.png',
+  };
+  return iconMap[iconName || ''] || '/src/assets/images/icon-variable.png';
+};

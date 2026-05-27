@@ -1,75 +1,75 @@
-import { ref } from 'vue'
-import { useGraph } from './useGraph'
-import { useDAGValidator } from './useDAGValidator'
-import { useTopologySort } from './useTopologySort'
-import type { WorkflowState } from '@/types/workflow'
+import { ref } from 'vue';
+import { useGraph } from './useGraph';
+import { useDAGValidator } from './useDAGValidator';
+import { useTopologySort } from './useTopologySort';
+import type { WorkflowState } from '@/types/workflow';
 
 const workflowState = ref<WorkflowState>({
   isRunning: false,
-  executionStates: {}
-})
+  executionStates: {},
+});
 
 export function useExecutor() {
-  const { graphRef } = useGraph()
-  const { validateWorkflow } = useDAGValidator()
-  const { getExecutionOrder } = useTopologySort()
+  const { graphRef } = useGraph();
+  const { validateWorkflow } = useDAGValidator();
+  const { getExecutionOrder } = useTopologySort();
 
   const startExecution = async () => {
-    const { valid, errors } = validateWorkflow()
+    const { valid, errors } = validateWorkflow();
     if (!valid) {
-      console.error('工作流验证失败:', errors)
-      return { success: false, errors }
+      console.error('工作流验证失败:', errors);
+      return { success: false, errors };
     }
 
-    const executionOrder = getExecutionOrder()
+    const executionOrder = getExecutionOrder();
     if (executionOrder.length === 0) {
-      return { success: false, errors: ['无法确定执行顺序'] }
+      return { success: false, errors: ['无法确定执行顺序'] };
     }
 
     workflowState.value = {
       isRunning: true,
       currentNodeId: executionOrder[0],
       executionStates: {},
-      startTime: Date.now()
-    }
+      startTime: Date.now(),
+    };
 
     executionOrder.forEach((nodeId) => {
       workflowState.value.executionStates[nodeId] = {
         nodeId,
-        status: 'pending'
-      }
-    })
+        status: 'pending',
+      };
+    });
 
     for (const nodeId of executionOrder) {
-      await executeNode(nodeId)
-      if (!workflowState.value.isRunning) break
+      await executeNode(nodeId);
+      if (!workflowState.value.isRunning) break;
     }
 
-    workflowState.value.isRunning = false
-    workflowState.value.endTime = Date.now()
+    workflowState.value.isRunning = false;
+    workflowState.value.endTime = Date.now();
 
-    return { success: true, errors: [] }
-  }
+    return { success: true, errors: [] };
+  };
 
   const executeNode = async (nodeId: string) => {
-    const state = workflowState.value.executionStates[nodeId]
-    if (!state) return
+    const state = workflowState.value.executionStates[nodeId];
+    if (!state) return;
 
-    state.status = 'running'
-    state.startTime = Date.now()
-    workflowState.value.currentNodeId = nodeId
+    state.status = 'running';
+    state.startTime = Date.now();
+    workflowState.value.currentNodeId = nodeId;
 
-    const node = graphRef.value?.getCellById(nodeId)
-    const nodeType = node?.data?.type
+    const node = graphRef.value?.getCellById(nodeId);
+    const nodeType = node?.data?.type;
 
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     try {
       switch (nodeType) {
         case 'INPUT':
         case 'OUTPUT':
-          state.status = 'completed'
-          break
+          state.status = 'completed';
+          break;
         case 'LLM':
         case 'KNOWLEDGE_BASE':
         case 'PYTHON_CODE':
@@ -83,44 +83,44 @@ export function useExecutor() {
         case 'AGENT':
         case 'WORKFLOW':
         case 'FILE_EXTRACT':
-          state.status = 'completed'
-          break
+          state.status = 'completed';
+          break;
         default:
-          state.status = 'completed'
+          state.status = 'completed';
       }
     } catch (error) {
-      state.status = 'error'
-      state.error = error instanceof Error ? error.message : '未知错误'
-      workflowState.value.isRunning = false
+      state.status = 'error';
+      state.error = error instanceof Error ? error.message : '未知错误';
+      workflowState.value.isRunning = false;
     }
 
-    state.endTime = Date.now()
-  }
+    state.endTime = Date.now();
+  };
 
   const stopExecution = () => {
-    workflowState.value.isRunning = false
-  }
+    workflowState.value.isRunning = false;
+  };
 
   const resetExecution = () => {
     workflowState.value = {
       isRunning: false,
-      executionStates: {}
-    }
-  }
+      executionStates: {},
+    };
+  };
 
   const getExecutionProgress = (): number => {
-    const states = Object.values(workflowState.value.executionStates)
-    if (states.length === 0) return 0
+    const states = Object.values(workflowState.value.executionStates);
+    if (states.length === 0) return 0;
 
-    const completedCount = states.filter((s) => s.status === 'completed').length
-    return Math.round((completedCount / states.length) * 100)
-  }
+    const completedCount = states.filter((s) => s.status === 'completed').length;
+    return Math.round((completedCount / states.length) * 100);
+  };
 
   return {
     workflowState,
     startExecution,
     stopExecution,
     resetExecution,
-    getExecutionProgress
-  }
+    getExecutionProgress,
+  };
 }

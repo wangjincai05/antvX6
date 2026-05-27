@@ -3,7 +3,12 @@
     <div class="p-4 border-b border-gray-200">
       <div class="flex items-center gap-2">
         <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+          />
         </svg>
         <h2 class="font-semibold text-gray-800">属性面板</h2>
       </div>
@@ -12,7 +17,9 @@
       <div v-if="selectedNode" class="space-y-4">
         <div class="p-3 bg-gray-50 rounded-lg">
           <div class="text-xs text-gray-500 mb-1">节点类型</div>
-          <div class="text-sm font-medium text-gray-800">{{ getNodeTypeName(selectedNode.data.type) }}</div>
+          <div class="text-sm font-medium text-gray-800">
+            {{ getNodeTypeName(selectedNode.data.type) }}
+          </div>
         </div>
         <div>
           <label class="block text-xs text-gray-500 mb-1">节点名称</label>
@@ -63,12 +70,8 @@
       <div v-else-if="selectedEdge" class="space-y-4">
         <div class="p-3 bg-gray-50 rounded-lg">
           <div class="text-xs text-gray-500 mb-1">连线信息</div>
-          <div class="text-sm text-gray-800">
-            源节点: {{ selectedEdge.getSourceCellId() }}
-          </div>
-          <div class="text-sm text-gray-800">
-            目标节点: {{ selectedEdge.getTargetCellId() }}
-          </div>
+          <div class="text-sm text-gray-800">源节点: {{ selectedEdge.getSourceCellId() }}</div>
+          <div class="text-sm text-gray-800">目标节点: {{ selectedEdge.getTargetCellId() }}</div>
         </div>
         <div>
           <label class="block text-xs text-gray-500 mb-1">连线颜色</label>
@@ -82,7 +85,12 @@
       </div>
       <div v-else class="flex flex-col items-center justify-center h-full text-gray-400">
         <svg class="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.5"
+            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+          />
         </svg>
         <p class="text-sm">选择节点或连线查看属性</p>
       </div>
@@ -91,66 +99,66 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
-import { nodeRegistry } from '@/config/workflow/node-registry'
+import { ref, watch, computed } from 'vue';
+import { nodeRegistry } from '@/config/workflow/node-registry';
 
 const props = defineProps<{
-  selectedNode: any | null
-  selectedEdge: any | null
-}>()
+  selectedNode: any | null;
+  selectedEdge: any | null;
+}>();
 
 const emit = defineEmits<{
-  (e: 'updateLabel', label: string): void
-}>()
+  (e: 'updateLabel', label: string): void;
+}>();
 
-const nodeLabel = ref('')
-const edgeColor = ref('#5f95ff')
+const nodeLabel = ref('');
+const edgeColor = ref('#5f95ff');
 
 const linkedProperties = ref<Record<string, string>>({
-  '执行超时': '30秒',
-  '重试次数': '3次',
-  '错误处理': '继续执行'
-})
+  执行超时: '30秒',
+  重试次数: '3次',
+  错误处理: '继续执行',
+});
 
-const nodeTypes = computed(() => Object.values(nodeRegistry))
+const nodeTypes = computed(() => Object.values(nodeRegistry));
 
 const getNodeTypeName = (type: string): string => {
-  const node = nodeTypes.value.find((n) => n.type === type)
-  return node?.name || type
-}
+  const node = nodeTypes.value.find((n) => n.type === type);
+  return node?.name || type;
+};
 
 watch(
   () => props.selectedNode,
   (node) => {
     if (node) {
-      const nodeData = node.getData?.() || {}
-      nodeLabel.value = (node as any).label || nodeData.label || ''
+      const nodeData = node.getData?.() || {};
+      nodeLabel.value = (node as any).label || nodeData.label || '';
     }
   }
-)
+);
 
 watch(
   () => props.selectedEdge,
   (edge) => {
     if (edge) {
-      const edgeAttrs = (edge as any).attrs || {}
-      const lineAttrs = edgeAttrs.line || {}
-      const color = lineAttrs.stroke
-      edgeColor.value = typeof color === 'string' ? color : '#5f95ff'
+      const edgeAttrs = (edge as any).attrs || {};
+      const lineAttrs = edgeAttrs.line || {};
+      const color = lineAttrs.stroke;
+      edgeColor.value = typeof color === 'string' ? color : '#5f95ff';
     }
   }
-)
+);
 
 const updateNodeLabel = () => {
   if (props.selectedNode) {
-    (props.selectedNode as any).setLabel?.(nodeLabel.value)
-    emit('updateLabel', nodeLabel.value)
+    (props.selectedNode as any).setLabel?.(nodeLabel.value);
+    emit('updateLabel', nodeLabel.value);
   }
-}
+};
 
 const updateEdgeColor = () => {
   if (props.selectedEdge) {
-    props.selectedEdge.attr('line/stroke', edgeColor.value)
+    props.selectedEdge.attr('line/stroke', edgeColor.value);
   }
-}
+};
 </script>

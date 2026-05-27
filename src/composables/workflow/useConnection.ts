@@ -1,8 +1,8 @@
-import { useGraph } from './useGraph'
-import { nodeRegistry } from '@/config/workflow/node-registry'
+import { useGraph } from './useGraph';
+import { nodeRegistry } from '@/config/workflow/node-registry';
 
 export function useConnection() {
-  const { graphRef } = useGraph()
+  const { graphRef } = useGraph();
 
   const validateConnection = (
     sourceCell: any,
@@ -10,71 +10,71 @@ export function useConnection() {
     sourceMagnet: any,
     targetMagnet: any
   ) => {
-    if (!sourceMagnet) return { valid: false, reason: '源连接点不存在' }
-    if (!targetMagnet) return { valid: false, reason: '目标连接点不存在' }
-    if (sourceCell === targetCell) return { valid: false, reason: '不能连接到自身' }
+    if (!sourceMagnet) return { valid: false, reason: '源连接点不存在' };
+    if (!targetMagnet) return { valid: false, reason: '目标连接点不存在' };
+    if (sourceCell === targetCell) return { valid: false, reason: '不能连接到自身' };
 
-    const sourceType = sourceCell?.data?.type
-    const targetType = targetCell?.data?.type
+    const sourceType = sourceCell?.data?.type;
+    const targetType = targetCell?.data?.type;
 
     if (sourceType === 'INPUT') {
       if (!sourceMagnet.getAttribute('port-group')?.includes('bottom')) {
-        return { valid: false, reason: '开始节点只能从底部端口输出' }
+        return { valid: false, reason: '开始节点只能从底部端口输出' };
       }
     }
 
     if (targetType === 'OUTPUT') {
       if (!targetMagnet.getAttribute('port-group')?.includes('top')) {
-        return { valid: false, reason: '结束节点只能从顶部端口输入' }
+        return { valid: false, reason: '结束节点只能从顶部端口输入' };
       }
     }
 
     if (sourceType === 'OUTPUT') {
-      return { valid: false, reason: '结束节点不能作为源节点' }
+      return { valid: false, reason: '结束节点不能作为源节点' };
     }
 
     if (targetType === 'INPUT') {
-      return { valid: false, reason: '开始节点不能作为目标节点' }
+      return { valid: false, reason: '开始节点不能作为目标节点' };
     }
 
-    return { valid: true, reason: '' }
-  }
+    return { valid: true, reason: '' };
+  };
 
   const getConnectionRules = (nodeType: string) => {
-    const config = nodeRegistry[nodeType]
-    if (!config) return { canConnectFrom: true, canConnectTo: true }
+    const config = nodeRegistry[nodeType];
+    if (!config) return { canConnectFrom: true, canConnectTo: true };
 
     switch (nodeType) {
       case 'INPUT':
-        return { canConnectFrom: false, canConnectTo: true }
+        return { canConnectFrom: false, canConnectTo: true };
       case 'OUTPUT':
-        return { canConnectFrom: true, canConnectTo: false }
+        return { canConnectFrom: true, canConnectTo: false };
       default:
-        return { canConnectFrom: true, canConnectTo: true }
+        return { canConnectFrom: true, canConnectTo: true };
     }
-  }
+  };
 
   const hasValidConnection = (sourceNodeId: string, targetNodeId: string) => {
-    const graph = graphRef.value
-    if (!graph) return false
+    const graph = graphRef.value;
+    if (!graph) return false;
 
-    const sourceNode = graph.getCellById(sourceNodeId)
-    const targetNode = graph.getCellById(targetNodeId)
+    const sourceNode = graph.getCellById(sourceNodeId);
+    const targetNode = graph.getCellById(targetNodeId);
 
-    if (!sourceNode || !targetNode) return false
+    if (!sourceNode || !targetNode) return false;
 
-    const sourceType = sourceNode.data?.type
-    const targetType = targetNode.data?.type
+    const sourceType = sourceNode.data?.type;
+    const targetType = targetNode.data?.type;
 
-    if (sourceType === 'OUTPUT') return false
-    if (targetType === 'INPUT') return false
+    if (sourceType === 'OUTPUT') return false;
+    if (targetType === 'INPUT') return false;
 
-    return true
-  }
+    return true;
+  };
 
   return {
     validateConnection,
     getConnectionRules,
-    hasValidConnection
-  }
+    hasValidConnection,
+  };
 }

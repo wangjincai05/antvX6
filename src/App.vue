@@ -5,5 +5,5 @@
 </template>
 
 <script setup lang="ts">
-import WorkflowEditor from '@/components/workflow/WorkflowEditor.vue'
+import WorkflowEditor from '@/components/workflow/WorkflowEditor.vue';
 </script>

@@ -12,14 +12,8 @@
     />
     <div class="flex-1 flex overflow-hidden">
       <div class="flex-1 flex flex-col relative">
-        <div
-          ref="containerRef"
-          class="flex-1 bg-gray-50"
-        />
-        <RunPanel
-          v-if="showRunPanel"
-          class="border-t border-gray-200"
-        />
+        <div ref="containerRef" class="flex-1 bg-gray-50" />
+        <RunPanel v-if="showRunPanel" class="border-t border-gray-200" />
       </div>
       <InspectorPanel
         :selected-node="selectedNode"
@@ -42,17 +36,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
-import Toolbar from './Toolbar.vue'
-import BottomToolbar from './BottomToolbar.vue'
-import InspectorPanel from './InspectorPanel.vue'
-import RunPanel from './RunPanel.vue'
-import { useGraph } from '@/composables/workflow/useGraph'
-import { useExecutor } from '@/composables/workflow/useExecutor'
+import { ref, onMounted, onUnmounted, watch } from 'vue';
+import Toolbar from './Toolbar.vue';
+import BottomToolbar from './BottomToolbar.vue';
+import InspectorPanel from './InspectorPanel.vue';
+import RunPanel from './RunPanel.vue';
+import { useGraph } from '@/composables/workflow/useGraph';
+import { useExecutor } from '@/composables/workflow/useExecutor';
 
-const showRunPanel = ref(false)
-const containerRef = ref<HTMLElement | null>(null)
-const currentZoom = ref(1)
+const showRunPanel = ref(false);
+const containerRef = ref<HTMLElement | null>(null);
+const currentZoom = ref(1);
 
 const {
   initGraph,
@@ -65,110 +59,110 @@ const {
   zoomIn,
   zoomOut,
   resetZoom,
-  addNode
-} = useGraph()
+  addNode,
+} = useGraph();
 
-const { startExecution, stopExecution, workflowState } = useExecutor()
+const { startExecution, stopExecution, workflowState } = useExecutor();
 
 onMounted(() => {
   if (containerRef.value) {
-    initGraph(containerRef.value)
+    initGraph(containerRef.value);
   }
-})
+});
 
 onUnmounted(() => {
-  graphRef.value?.dispose()
-})
+  graphRef.value?.dispose();
+});
 
 watch(workflowState, (state) => {
-  showRunPanel.value = state.isRunning || Object.keys(state.executionStates).length > 0
-})
+  showRunPanel.value = state.isRunning || Object.keys(state.executionStates).length > 0;
+});
 
 const handleZoomIn = () => {
-  zoomIn()
-  updateZoom()
-}
+  zoomIn();
+  updateZoom();
+};
 
 const handleZoomOut = () => {
-  zoomOut()
-  updateZoom()
-}
+  zoomOut();
+  updateZoom();
+};
 
 const handleResetZoom = () => {
-  resetZoom()
-  currentZoom.value = 1
-}
+  resetZoom();
+  currentZoom.value = 1;
+};
 
 const updateZoom = () => {
-  const scale = (graphRef.value as unknown as { getScale: () => number })?.getScale?.()
+  const scale = (graphRef.value as unknown as { getScale: () => number })?.getScale?.();
   if (scale) {
-    currentZoom.value = scale
+    currentZoom.value = scale;
   }
-}
+};
 
 const handleUndo = () => {
-  const history = (graphRef.value as any)?.history
-  history?.undo?.()
-}
+  const history = (graphRef.value as any)?.history;
+  history?.undo?.();
+};
 
 const handleRedo = () => {
-  const history = (graphRef.value as any)?.history
-  history?.redo?.()
-}
+  const history = (graphRef.value as any)?.history;
+  history?.redo?.();
+};
 
 const handleClear = () => {
   if (confirm('确定要清空画布吗？')) {
-    clearCanvas()
+    clearCanvas();
   }
-}
+};
 
 const handleExport = () => {
-  const json = exportWorkflow()
-  const blob = new Blob([json], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'workflow.json'
-  a.click()
-  URL.revokeObjectURL(url)
-}
+  const json = exportWorkflow();
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'workflow.json';
+  a.click();
+  URL.revokeObjectURL(url);
+};
 
 const handleImport = () => {
-  const input = document.createElement('input')
-  input.type = 'file'
-  input.accept = '.json'
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
   input.onchange = (e) => {
-    const file = (e.target as HTMLInputElement).files?.[0]
+    const file = (e.target as HTMLInputElement).files?.[0];
     if (file) {
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onload = (event) => {
-        importWorkflow(event.target?.result as string)
-      }
-      reader.readAsText(file)
+        importWorkflow(event.target?.result as string);
+      };
+      reader.readAsText(file);
     }
-  }
-  input.click()
-}
+  };
+  input.click();
+};
 
 const handleRun = async () => {
-  const result = await startExecution()
+  const result = await startExecution();
   if (!result.success) {
-    alert(result.errors.join('\n'))
+    alert(result.errors.join('\n'));
   }
-}
+};
 
 const handleStop = () => {
-  stopExecution()
-}
+  stopExecution();
+};
 
 const handleAddNode = (type: string) => {
-  if (!containerRef.value) return
-  
-  const rect = containerRef.value.getBoundingClientRect()
-  const x = rect.width / 2 - 60
-  const y = rect.height / 2 - 40
-  addNode(type, x, y)
-}
+  if (!containerRef.value) return;
 
-const handleUpdateLabel = (_label: string) => {}
+  const rect = containerRef.value.getBoundingClientRect();
+  const x = rect.width / 2 - 60;
+  const y = rect.height / 2 - 40;
+  addNode(type, x, y);
+};
+
+const handleUpdateLabel = (_label: string) => {};
 </script>

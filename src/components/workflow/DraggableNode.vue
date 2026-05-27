@@ -27,17 +27,17 @@
 </template>
 
 <script setup lang="ts">
-import { useDnd } from '@/composables/workflow/useDnd'
-import type { NodeConfig } from '@/config/workflow/node-registry'
-import { getIconPath } from '@/utils/node-utils'
+import { useDnd } from '@/composables/workflow/useDnd';
+import type { NodeConfig } from '@/config/workflow/node-registry';
+import { getIconPath } from '@/utils/node-utils';
 
 const props = defineProps<{
-  node: NodeConfig
-}>()
+  node: NodeConfig;
+}>();
 
-const { handleDragStart: dndHandleDragStart, handleDragOver } = useDnd()
+const { handleDragStart: dndHandleDragStart, handleDragOver } = useDnd();
 
 const onDragStart = (event: DragEvent) => {
-  dndHandleDragStart(event, props.node.type)
-}
+  dndHandleDragStart(event, props.node.type);
+};
 </script>

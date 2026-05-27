@@ -25,23 +25,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject } from 'vue'
-import { nodeRegistry } from '@/config/workflow/node-registry'
-import { getIconPath } from '@/utils/node-utils'
+import { computed, inject } from 'vue';
+import { nodeRegistry } from '@/config/workflow/node-registry';
+import { getIconPath } from '@/utils/node-utils';
 
 interface GetNodeFn {
-  (): { getData: () => { type?: string } } | undefined
+  (): { getData: () => { type?: string } } | undefined;
 }
 
-const getNode = inject<GetNodeFn>('getNode')
-const node = getNode?.()
-const nodeData = node?.getData?.() || {}
-const config = computed(() => nodeRegistry[nodeData.type || ''])
+const getNode = inject<GetNodeFn>('getNode');
+const node = getNode?.();
+const nodeData = node?.getData?.() || {};
+const config = computed(() => nodeRegistry[nodeData.type || '']);
 
 const containerStyle = computed(() => ({
-  borderColor: '#5f95ff'
-}))
+  borderColor: '#5f95ff',
+}));
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

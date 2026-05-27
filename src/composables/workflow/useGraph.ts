@@ -157,7 +157,7 @@ export function useGraph() {
     if (!graphRef.value) return;
     const currentScale = (graphRef.value as unknown as { getScale: () => number }).getScale();
     (graphRef.value as unknown as { zoomTo: (scale: number) => void }).zoomTo(
-      Math.min(currentScale * 1.2, 2),
+      Math.min(currentScale * 1.2, 2)
     );
   };
 
@@ -165,7 +165,7 @@ export function useGraph() {
     if (!graphRef.value) return;
     const currentScale = (graphRef.value as unknown as { getScale: () => number }).getScale();
     (graphRef.value as unknown as { zoomTo: (scale: number) => void }).zoomTo(
-      Math.max(currentScale * 0.8, 0.2),
+      Math.max(currentScale * 0.8, 0.2)
     );
   };
 
@@ -229,7 +229,7 @@ export function useGraph() {
       const graph = graphRef.value as any;
 
       const hasInput = (data.nodes as ImportNodeData[])?.some(
-        (n: ImportNodeData) => n.type === 'INPUT',
+        (n: ImportNodeData) => n.type === 'INPUT'
       );
 
       // Remove all cells except the start node (when imported data has no INPUT)
@@ -251,7 +251,7 @@ export function useGraph() {
           const height = graph.getHeight?.() || graph.options?.height || 600;
           existingInput.position(
             width / 2 - nodeStyle.width / 2,
-            height / 2 - nodeStyle.height / 2,
+            height / 2 - nodeStyle.height / 2
           );
         }
       }

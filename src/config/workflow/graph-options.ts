@@ -5,18 +5,18 @@ export const defaultGraphOptions = {
     type: 'dot',
     args: {
       color: '#d0d0d0',
-      thickness: 1
-    }
+      thickness: 1,
+    },
   },
   panning: {
     enabled: true,
-    modifiers: 'shift'
+    modifiers: 'shift',
   },
   mousewheel: {
     enabled: true,
     modifiers: 'ctrl',
     minScale: 0.2,
-    maxScale: 2
+    maxScale: 2,
   },
   selecting: {
     enabled: true,
@@ -33,22 +33,22 @@ export const defaultGraphOptions = {
   keyboard: true,
   clipboard: true,
   background: {
-    color: '#f2f3f5'
+    color: '#f2f3f5',
   },
   connecting: {
     router: 'manhattan',
     connector: {
       name: 'rounded',
       args: {
-        radius: 8
-      }
+        radius: 8,
+      },
     },
     anchor: 'center',
     connectionPoint: 'anchor',
     allowBlank: false,
     snap: {
-      radius: 20
-    }
+      radius: 20,
+    },
   },
   highlighting: {
     magnetAdsorbed: {
@@ -57,12 +57,12 @@ export const defaultGraphOptions = {
         attrs: {
           fill: '#fff',
           stroke: '#31d0c6',
-          strokeWidth: 4
-        }
-      }
-    }
-  }
-}
+          strokeWidth: 4,
+        },
+      },
+    },
+  },
+};
 
 export const nodeStyle = {
   shape: 'workflow-node',
@@ -74,14 +74,14 @@ export const nodeStyle = {
       stroke: '#5f95ff',
       strokeWidth: 2,
       rx: 8,
-      ry: 8
+      ry: 8,
     },
     label: {
       fontSize: 14,
-      fill: '#333333'
-    }
-  }
-}
+      fill: '#333333',
+    },
+  },
+};
 
 export const edgeStyle = {
   attrs: {
@@ -90,9 +90,9 @@ export const edgeStyle = {
       strokeWidth: 2,
       targetMarker: {
         name: 'classic',
-        size: 8
-      }
-    }
+        size: 8,
+      },
+    },
   },
-  zIndex: 0
-}
+  zIndex: 0,
+};
