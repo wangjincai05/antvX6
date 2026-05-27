@@ -39,6 +39,7 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { useGraphStore } from '@/stores/graphStore';
 import { useWorkflowStore } from '@/stores/workflowStore';
+import type { InspectorNode, InspectorEdge } from '@/types/inspector';
 import Toolbar from './Toolbar.vue';
 import BottomToolbar from './BottomToolbar.vue';
 import InspectorPanel from './InspectorPanel.vue';
@@ -50,35 +51,6 @@ const currentZoom = ref(1);
 
 const graphStore = useGraphStore();
 const workflowStore = useWorkflowStore();
-
-interface NodeData {
-  type?: string;
-  label?: string;
-}
-
-interface InspectorNode {
-  data?: NodeData;
-  getData?: () => NodeData;
-  label?: string;
-  position: () => { x: number; y: number };
-  setLabel?: (label: string) => void;
-}
-
-interface EdgeLineAttrs {
-  stroke?: string;
-}
-
-interface EdgeAttrs {
-  line?: EdgeLineAttrs;
-}
-
-interface InspectorEdge {
-  getSourceCellId: () => string | undefined;
-  getTargetCellId: () => string | undefined;
-  attrs?: EdgeAttrs | null;
-  setAttrs?: (...args: unknown[]) => unknown;
-  attr: (path: string, value: string) => void;
-}
 
 const inspectorSelectedNode = computed(() => graphStore.selectedNode as InspectorNode | null);
 const inspectorSelectedEdge = computed(() => graphStore.selectedEdge as InspectorEdge | null);

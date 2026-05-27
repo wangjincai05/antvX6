@@ -101,35 +101,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
 import { nodeRegistry } from '@/config/workflow/node-registry';
-
-interface NodeData {
-  type?: string;
-  label?: string;
-}
-
-interface InspectorNode {
-  data?: NodeData;
-  getData?: () => NodeData;
-  label?: string;
-  position: () => { x: number; y: number };
-  setLabel?: (label: string) => void;
-}
-
-interface EdgeLineAttrs {
-  stroke?: string;
-}
-
-interface EdgeAttrs {
-  line?: EdgeLineAttrs;
-}
-
-interface InspectorEdge {
-  getSourceCellId: () => string | undefined;
-  getTargetCellId: () => string | undefined;
-  attrs?: EdgeAttrs | null;
-  setAttrs?: (...args: unknown[]) => unknown;
-  attr: (path: string, value: string) => void;
-}
+import type { InspectorNode, InspectorEdge } from '@/types/inspector';
 
 const props = defineProps<{
   selectedNode: InspectorNode | null;
@@ -160,9 +132,8 @@ watch(
   () => props.selectedNode,
   (node) => {
     if (node) {
-      const nodeWithMethods = node as InspectorNode;
-      const nodeData = nodeWithMethods.getData?.() || {};
-      nodeLabel.value = nodeWithMethods.label || nodeData.label || '';
+      const nodeData = node.getData?.() || {};
+      nodeLabel.value = node.label || nodeData.label || '';
     }
   }
 );
@@ -171,8 +142,7 @@ watch(
   () => props.selectedEdge,
   (edge) => {
     if (edge) {
-      const edgeWithAttrs = edge as InspectorEdge;
-      const edgeAttrs = edgeWithAttrs.attrs || {};
+      const edgeAttrs = edge.attrs || {};
       const lineAttrs = edgeAttrs.line || {};
       const color = lineAttrs.stroke;
       edgeColor.value = typeof color === 'string' ? color : '#5f95ff';
@@ -182,14 +152,14 @@ watch(
 
 const updateNodeLabel = () => {
   if (props.selectedNode) {
-    (props.selectedNode as InspectorNode).setLabel?.(nodeLabel.value);
+    props.selectedNode.setLabel?.(nodeLabel.value);
     emit('updateLabel', nodeLabel.value);
   }
 };
 
 const updateEdgeColor = () => {
   if (props.selectedEdge) {
-    (props.selectedEdge as InspectorEdge).attr('line/stroke', edgeColor.value);
+    props.selectedEdge.attr('line/stroke', edgeColor.value);
   }
 };
 </script>
