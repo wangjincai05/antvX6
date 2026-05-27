@@ -1,15 +1,14 @@
+import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { Dnd, type Graph, type Node } from '@antv/x6';
-import { useGraph } from './useGraph';
 import { nodeRegistry, portGroups } from '@/config/workflow/node-registry';
-
-const isDragging = ref(false);
-const dragNodeType = ref<string | null>(null);
+import { useGraphStore } from './graphStore';
 
 const loopNodeTypes = ['LOOP_BREAK'];
 
-export function useDnd() {
-  const { graphRef } = useGraph();
+export const useUiStore = defineStore('ui', () => {
+  const isDragging = ref(false);
+  const dragNodeType = ref<string | null>(null);
 
   const startDrag = (nodeType: string) => {
     isDragging.value = true;
@@ -22,14 +21,15 @@ export function useDnd() {
   };
 
   const handleDragStart = (event: DragEvent, nodeType: string) => {
-    if (!graphRef.value) return;
+    const graphStore = useGraphStore();
+    if (!graphStore.graphRef) return;
 
     const config = nodeRegistry[nodeType];
     if (!config) return;
 
     const ports = config.ports;
 
-    const templateNode = (graphRef.value as unknown as Graph).createNode({
+    const templateNode = (graphStore.graphRef as unknown as Graph).createNode({
       shape: 'workflow-node',
       label: config.name,
       attrs: {
@@ -48,7 +48,7 @@ export function useDnd() {
     });
 
     const dnd = new Dnd({
-      target: graphRef.value as unknown as Graph,
+      target: graphStore.graphRef as unknown as Graph,
       getDropNode: (node: Node) => {
         return node.clone() as Node;
       },
@@ -56,7 +56,7 @@ export function useDnd() {
         const nodeData = droppingNode.getData() as { type: string };
         const position = droppingNode.position();
 
-        const nodesUnder = (graphRef.value as unknown as Graph).getNodesFromPoint(
+        const nodesUnder = (graphStore.graphRef as unknown as Graph).getNodesFromPoint(
           position.x,
           position.y
         );
@@ -89,4 +89,4 @@ export function useDnd() {
     handleDragStart,
     handleDragOver,
   };
-}
+});

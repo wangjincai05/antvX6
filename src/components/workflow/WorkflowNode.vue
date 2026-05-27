@@ -39,7 +39,7 @@ const nodeData = node?.getData?.() || {};
 const config = computed(() => nodeRegistry[nodeData.type || '']);
 
 const containerStyle = computed(() => ({
-  borderColor: '#5f95ff',
+  borderColor: '#e5e5e5',
 }));
 </script>
 

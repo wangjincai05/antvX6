@@ -1,27 +1,29 @@
+import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { useGraph } from './useGraph';
-import { useDAGValidator } from './useDAGValidator';
-import { useTopologySort } from './useTopologySort';
 import type { WorkflowState } from '@/types/workflow';
+import { useGraphStore } from './graphStore';
+import { validateWorkflow } from '@/utils/dag-validator';
+import { getExecutionOrder } from '@/utils/topology-sort';
 
-const workflowState = ref<WorkflowState>({
-  isRunning: false,
-  executionStates: {},
-});
-
-export function useExecutor() {
-  const { graphRef } = useGraph();
-  const { validateWorkflow } = useDAGValidator();
-  const { getExecutionOrder } = useTopologySort();
+export const useWorkflowStore = defineStore('workflow', () => {
+  const workflowState = ref<WorkflowState>({
+    isRunning: false,
+    executionStates: {},
+  });
 
   const startExecution = async () => {
-    const { valid, errors } = validateWorkflow();
+    const graphStore = useGraphStore();
+    if (!graphStore.graphRef) {
+      return { success: false, errors: ['图形实例不存在'] };
+    }
+
+    const { valid, errors } = validateWorkflow(graphStore.graphRef);
     if (!valid) {
       console.error('工作流验证失败:', errors);
       return { success: false, errors };
     }
 
-    const executionOrder = getExecutionOrder();
+    const executionOrder = getExecutionOrder(graphStore.graphRef);
     if (executionOrder.length === 0) {
       return { success: false, errors: ['无法确定执行顺序'] };
     }
@@ -59,7 +61,8 @@ export function useExecutor() {
     state.startTime = Date.now();
     workflowState.value.currentNodeId = nodeId;
 
-    const node = graphRef.value?.getCellById(nodeId);
+    const graphStore = useGraphStore();
+    const node = graphStore.graphRef?.getCellById(nodeId);
     const nodeType = node?.data?.type;
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -123,4 +126,4 @@ export function useExecutor() {
     resetExecution,
     getExecutionProgress,
   };
-}
+});

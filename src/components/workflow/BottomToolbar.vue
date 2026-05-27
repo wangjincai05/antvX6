@@ -116,9 +116,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import NodeSelectPanel from './NodeSelectPanel.vue';
-import { useExecutor } from '@/composables/workflow/useExecutor';
+import { useWorkflowStore } from '@/stores/workflowStore';
 
 const props = defineProps<{
   zoom: number;
@@ -138,8 +138,8 @@ const nodePanelAnchor = ref<HTMLElement | null>(null);
 const isHovered = ref(false);
 const showNodePanel = ref(false);
 
-const { workflowState } = useExecutor();
-const isRunning = workflowState.value.isRunning;
+const workflowStore = useWorkflowStore();
+const isRunning = computed(() => workflowStore.workflowState.isRunning);
 
 watch(
   () => props.zoom,

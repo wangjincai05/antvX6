@@ -1,3 +1,4 @@
+import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { Graph } from '@antv/x6';
 import { register } from '@antv/x6-vue-shape';
@@ -6,27 +7,11 @@ import { nodeRegistry, portGroups, portInteractionStyles } from '@/config/workfl
 import type { NodeData, EdgeData } from '@/types/workflow';
 import WorkflowNode from '@/components/workflow/WorkflowNode.vue';
 
-interface Position {
-  x: number;
-  y: number;
-}
+export const useGraphStore = defineStore('graph', () => {
+  const graphRef = ref<Graph | null>(null);
+  const selectedNode = ref<any>(null);
+  const selectedEdge = ref<any>(null);
 
-interface NodeProperties {
-  position?: Position;
-}
-
-interface ImportNodeData {
-  id: string;
-  type: string;
-  label?: string;
-  properties?: NodeProperties;
-}
-
-const graphRef = ref<Graph | null>(null);
-const selectedNode = ref<any>(null);
-const selectedEdge = ref<any>(null);
-
-export function useGraph() {
   const initGraph = (container: HTMLElement) => {
     register({
       shape: 'workflow-node',
@@ -77,6 +62,7 @@ export function useGraph() {
       selectedEdge.value = edge;
       selectedNode.value = null;
     });
+
     graphRef.value.on('node:mouseover', ({ node }: { node: any }) => {
       handleNodeMouseOver(node);
     });
@@ -84,27 +70,27 @@ export function useGraph() {
     graphRef.value.on('node:mouseout', ({ node }: { node: any }) => {
       handleNodeMouseOut(node);
     });
+
     graphRef.value.on('blank:click', () => {
       selectedNode.value = null;
       selectedEdge.value = null;
     });
 
-    // Add default start node at canvas center
     const width = (graphRef.value as any).getWidth?.() || container.offsetWidth;
     const height = (graphRef.value as any).getHeight?.() || container.offsetHeight;
     addNode('INPUT', width / 2 - nodeStyle.width / 2, height / 2 - nodeStyle.height / 2);
 
-    // Override keyboard delete to protect start node
     (graphRef.value as any).bindKey('del', () => {
       const selected = graphRef.value!.getSelectedCells();
-      const toRemove = selected.filter((cell) => (cell as any).data?.type !== 'INPUT');
+      const toRemove = selected.filter((cell: any) => cell.data?.type !== 'INPUT');
       if (toRemove.length > 0) {
         graphRef.value!.removeCells(toRemove as any);
       }
     });
+
     (graphRef.value as any).bindKey('backspace', () => {
       const selected = graphRef.value!.getSelectedCells();
-      const toRemove = selected.filter((cell) => (cell as any).data?.type !== 'INPUT');
+      const toRemove = selected.filter((cell: any) => cell.data?.type !== 'INPUT');
       if (toRemove.length > 0) {
         graphRef.value!.removeCells(toRemove as any);
       }
@@ -144,8 +130,8 @@ export function useGraph() {
 
   const clearCanvas = () => {
     if (!graphRef.value) return;
-    graphRef.value.getCells().forEach((cell) => {
-      if ((cell as any).data?.type !== 'INPUT') {
+    graphRef.value.getCells().forEach((cell: any) => {
+      if (cell.data?.type !== 'INPUT') {
         cell.remove();
       }
     });
@@ -228,22 +214,33 @@ export function useGraph() {
       const data = JSON.parse(jsonString);
       const graph = graphRef.value as any;
 
-      const hasInput = (data.nodes as ImportNodeData[])?.some(
-        (n: ImportNodeData) => n.type === 'INPUT'
+      const hasInput = (data.nodes as { type: string }[])?.some(
+        (n: { type: string }) => n.type === 'INPUT'
       );
 
-      // Remove all cells except the start node (when imported data has no INPUT)
       graph.getCells().forEach((cell: any) => {
         if (cell.data?.type !== 'INPUT' || hasInput) {
           cell.remove();
         }
       });
-      (data.nodes as ImportNodeData[])?.forEach((node: ImportNodeData) => {
-        const pos = node.properties?.position || { x: 0, y: 0 };
-        addNode(node.type, pos.x, pos.y, node.label);
-      });
 
-      // If imported data has no INPUT node, reposition the existing default start node
+      (
+        data.nodes as {
+          type: string;
+          properties?: { position?: { x: number; y: number } };
+          label?: string;
+        }[]
+      )?.forEach(
+        (node: {
+          type: string;
+          properties?: { position?: { x: number; y: number } };
+          label?: string;
+        }) => {
+          const pos = node.properties?.position || { x: 0, y: 0 };
+          addNode(node.type, pos.x, pos.y, node.label);
+        }
+      );
+
       if (!hasInput) {
         const existingInput = graph.getNodes().find((n: any) => n.data?.type === 'INPUT');
         if (existingInput) {
@@ -256,18 +253,22 @@ export function useGraph() {
         }
       }
 
-      (data.edges as EdgeData[])?.forEach((edge: EdgeData) => {
-        graph.addEdge({
-          source: { cell: edge.source, port: edge.sourcePort },
-          target: { cell: edge.target, port: edge.targetPort },
-        });
-      });
+      (
+        data.edges as { source: string; target: string; sourcePort?: string; targetPort?: string }[]
+      )?.forEach(
+        (edge: { source: string; target: string; sourcePort?: string; targetPort?: string }) => {
+          graph.addEdge({
+            source: { cell: edge.source, port: edge.sourcePort },
+            target: { cell: edge.target, port: edge.targetPort },
+          });
+        }
+      );
     } catch {
       console.error('Invalid workflow JSON');
     }
   };
+
   const handleNodeMouseOver = (node: any) => {
-    // Expand all ports when hovering over node
     const ports = node.getPorts();
     ports.forEach((port: any) => {
       node.portProp(port.id, 'attrs/circle/r', portInteractionStyles.nodeHover.r);
@@ -275,12 +276,12 @@ export function useGraph() {
   };
 
   const handleNodeMouseOut = (node: any) => {
-    // Reset all ports when mouse leaves node
     const ports = node.getPorts();
     ports.forEach((port: any) => {
       node.portProp(port.id, 'attrs/circle/r', portInteractionStyles.default.r);
     });
   };
+
   return {
     graphRef,
     selectedNode,
@@ -294,4 +295,4 @@ export function useGraph() {
     exportWorkflow,
     importWorkflow,
   };
-}
+});

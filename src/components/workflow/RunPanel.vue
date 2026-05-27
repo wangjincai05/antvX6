@@ -45,17 +45,20 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useExecutor } from '@/composables/workflow/useExecutor';
-import { useGraph } from '@/composables/workflow/useGraph';
+import { useWorkflowStore } from '@/stores/workflowStore';
+import { useGraphStore } from '@/stores/graphStore';
 
-const { workflowState, getExecutionProgress } = useExecutor();
-const { graphRef } = useGraph();
+const workflowStore = useWorkflowStore();
+const graphStore = useGraphStore();
 
-const executionStates = computed(() => workflowState.value.executionStates);
+const { workflowState, getExecutionProgress } = workflowStore;
+const { graphRef } = graphStore;
+
+const executionStates = computed(() => workflowState.executionStates);
 const progress = computed(() => getExecutionProgress());
 
 const getNodeLabel = (nodeId: string): string => {
-  const node = graphRef.value?.getCellById(nodeId);
+  const node = graphRef?.getCellById(nodeId);
   return (node as any)?.label || nodeId;
 };
 

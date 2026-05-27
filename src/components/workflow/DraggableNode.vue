@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { useDnd } from '@/composables/workflow/useDnd';
+import { useUiStore } from '@/stores/uiStore';
 import type { NodeConfig } from '@/config/workflow/node-registry';
 import { getIconPath } from '@/utils/node-utils';
 
@@ -35,7 +35,8 @@ const props = defineProps<{
   node: NodeConfig;
 }>();
 
-const { handleDragStart: dndHandleDragStart, handleDragOver } = useDnd();
+const uiStore = useUiStore();
+const { handleDragStart: dndHandleDragStart, handleDragOver } = uiStore;
 
 const onDragStart = (event: DragEvent) => {
   dndHandleDragStart(event, props.node.type);

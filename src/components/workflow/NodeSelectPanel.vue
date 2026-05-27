@@ -73,7 +73,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { nodeRegistry, type NodeConfig } from '@/config/workflow/node-registry';
-import { useDnd } from '@/composables/workflow/useDnd';
+import { useUiStore } from '@/stores/uiStore';
 
 defineProps<{
   anchor?: HTMLElement | null;
@@ -87,7 +87,8 @@ const emit = defineEmits<{
 const panelRef = ref<HTMLElement | null>(null);
 const searchQuery = ref('');
 
-const { handleDragStart: dndHandleDragStart, handleDragOver } = useDnd();
+const uiStore = useUiStore();
+const { handleDragStart: dndHandleDragStart, handleDragOver } = uiStore;
 
 interface Category {
   name: string;

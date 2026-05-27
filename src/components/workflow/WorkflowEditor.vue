@@ -37,16 +37,19 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { useGraphStore } from '@/stores/graphStore';
+import { useWorkflowStore } from '@/stores/workflowStore';
 import Toolbar from './Toolbar.vue';
 import BottomToolbar from './BottomToolbar.vue';
 import InspectorPanel from './InspectorPanel.vue';
 import RunPanel from './RunPanel.vue';
-import { useGraph } from '@/composables/workflow/useGraph';
-import { useExecutor } from '@/composables/workflow/useExecutor';
 
 const showRunPanel = ref(false);
 const containerRef = ref<HTMLElement | null>(null);
 const currentZoom = ref(1);
+
+const graphStore = useGraphStore();
+const workflowStore = useWorkflowStore();
 
 const {
   initGraph,
@@ -60,9 +63,9 @@ const {
   zoomOut,
   resetZoom,
   addNode,
-} = useGraph();
+} = graphStore;
 
-const { startExecution, stopExecution, workflowState } = useExecutor();
+const { startExecution, stopExecution, workflowState } = workflowStore;
 
 onMounted(() => {
   if (containerRef.value) {
@@ -71,7 +74,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  graphRef.value?.dispose();
+  graphRef?.dispose();
 });
 
 watch(workflowState, (state) => {
@@ -94,19 +97,19 @@ const handleResetZoom = () => {
 };
 
 const updateZoom = () => {
-  const scale = (graphRef.value as unknown as { getScale: () => number })?.getScale?.();
+  const scale = (graphRef as unknown as { getScale: () => number })?.getScale?.();
   if (scale) {
     currentZoom.value = scale;
   }
 };
 
 const handleUndo = () => {
-  const history = (graphRef.value as any)?.history;
+  const history = (graphRef as any)?.history;
   history?.undo?.();
 };
 
 const handleRedo = () => {
-  const history = (graphRef.value as any)?.history;
+  const history = (graphRef as any)?.history;
   history?.redo?.();
 };
 
