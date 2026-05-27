@@ -15,11 +15,7 @@
         <div ref="containerRef" class="flex-1 bg-gray-50" />
         <RunPanel v-if="showRunPanel" class="border-t border-gray-200" />
       </div>
-      <InspectorPanel
-        :selected-node="inspectorSelectedNode"
-        :selected-edge="inspectorSelectedEdge"
-        @update-label="handleUpdateLabel"
-      />
+      <InspectorPanel :selected-node="inspectorSelectedNode" @update-label="handleUpdateLabel" />
     </div>
 
     <BottomToolbar
@@ -62,7 +58,6 @@ const graphStore = useGraphStore();
 const workflowStore = useWorkflowStore();
 
 const inspectorSelectedNode = computed(() => graphStore.selectedNode as InspectorNode | null);
-const inspectorSelectedEdge = computed(() => graphStore.selectedEdge as InspectorEdge | null);
 
 const {
   initGraph,

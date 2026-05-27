@@ -1,5 +1,5 @@
 <template>
-  <div class="w-72 bg-white border-l border-gray-200 flex flex-col">
+  <div class="w-72 bg-white border-l border-gray-200 flex flex-col" v-if="selectedNode">
     <div class="p-4 border-b border-gray-200">
       <div class="flex items-center gap-2">
         <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -14,11 +14,11 @@
       </div>
     </div>
     <div class="flex-1 overflow-y-auto p-4">
-      <div v-if="selectedNode" class="space-y-4">
+      <div class="space-y-4">
         <div class="p-3 bg-gray-50 rounded-lg">
           <div class="text-xs text-gray-500 mb-1">节点类型</div>
           <div class="text-sm font-medium text-gray-800">
-            {{ getNodeTypeName(selectedNode.data?.type || '') }}
+            {{ getNodeTypeName(selectedNode?.data?.type || '') }}
           </div>
         </div>
         <div>
@@ -36,7 +36,7 @@
             <div>
               <div class="text-xs text-gray-400">X</div>
               <input
-                :value="Math.round(selectedNode.position().x)"
+                :value="Math.round(selectedNode?.position().x || 0)"
                 type="number"
                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 readonly
@@ -45,7 +45,7 @@
             <div>
               <div class="text-xs text-gray-400">Y</div>
               <input
-                :value="Math.round(selectedNode.position().y)"
+                :value="Math.round(selectedNode?.position().y || 0)"
                 type="number"
                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 readonly
@@ -67,33 +67,6 @@
           </div>
         </div>
       </div>
-      <div v-else-if="selectedEdge" class="space-y-4">
-        <div class="p-3 bg-gray-50 rounded-lg">
-          <div class="text-xs text-gray-500 mb-1">连线信息</div>
-          <div class="text-sm text-gray-800">源节点: {{ selectedEdge.getSourceCellId() }}</div>
-          <div class="text-sm text-gray-800">目标节点: {{ selectedEdge.getTargetCellId() }}</div>
-        </div>
-        <div>
-          <label class="block text-xs text-gray-500 mb-1">连线颜色</label>
-          <input
-            v-model="edgeColor"
-            type="color"
-            class="w-full h-10 rounded-lg cursor-pointer"
-            @change="updateEdgeColor"
-          />
-        </div>
-      </div>
-      <div v-else class="flex flex-col items-center justify-center h-full text-gray-400">
-        <svg class="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.5"
-            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-          />
-        </svg>
-        <p class="text-sm">选择节点或连线查看属性</p>
-      </div>
     </div>
   </div>
 </template>
@@ -101,11 +74,10 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
 import { nodeRegistry } from '@/config/workflow/node-registry';
-import type { InspectorNode, InspectorEdge } from '@/types/inspector';
+import type { InspectorNode } from '@/types/inspector';
 
 const props = defineProps<{
   selectedNode: InspectorNode | null;
-  selectedEdge: InspectorEdge | null;
 }>();
 
 const emit = defineEmits<{
@@ -113,7 +85,6 @@ const emit = defineEmits<{
 }>();
 
 const nodeLabel = ref('');
-const edgeColor = ref('#5f95ff');
 
 const linkedProperties = ref<Record<string, string>>({
   执行超时: '30秒',
@@ -138,28 +109,10 @@ watch(
   }
 );
 
-watch(
-  () => props.selectedEdge,
-  (edge) => {
-    if (edge) {
-      const edgeAttrs = edge.attrs || {};
-      const lineAttrs = edgeAttrs.line || {};
-      const color = lineAttrs.stroke;
-      edgeColor.value = typeof color === 'string' ? color : '#5f95ff';
-    }
-  }
-);
-
 const updateNodeLabel = () => {
   if (props.selectedNode) {
     props.selectedNode.setLabel?.(nodeLabel.value);
     emit('updateLabel', nodeLabel.value);
-  }
-};
-
-const updateEdgeColor = () => {
-  if (props.selectedEdge) {
-    props.selectedEdge.attr('line/stroke', edgeColor.value);
   }
 };
 </script>
