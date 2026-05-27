@@ -56,8 +56,8 @@ export const defaultGraphOptions = {
     magnetAvailable: {
       name: 'stroke',
       args: {
+        padding: 8,
         attrs: {
-          padding: 8,
           fill: '#fff',
           stroke: '#31d0c6',
           strokeWidth: 4,

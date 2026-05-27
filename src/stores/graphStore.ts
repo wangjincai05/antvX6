@@ -2,12 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { Graph, Node, Edge, Selection, History, Keyboard } from '@antv/x6';
 import { register } from '@antv/x6-vue-shape';
-import {
-  defaultGraphOptions,
-  nodeStyle,
-  edgeStyle,
-  edgeHighlightStyle,
-} from '@/config/workflow/graph-options';
+import { defaultGraphOptions, nodeStyle, edgeStyle } from '@/config/workflow/graph-options';
 import { nodeRegistry, portGroups, portInteractionStyles } from '@/config/workflow/node-registry';
 import type { NodeData, EdgeData } from '@/types/workflow';
 import WorkflowNode from '@/components/workflow/WorkflowNode.vue';
@@ -85,6 +80,14 @@ export const useGraphStore = defineStore('graph', () => {
             ...edgeStyle,
           });
         },
+        validateMagnet(
+          this: Graph,
+          { magnet }: { magnet: { getAttribute: (name: string) => string | null } }
+        ) {
+          // 返回值来判断是否新增边,true 新增，false 否
+          const portGroup = magnet.getAttribute('port-group');
+          return !['left', 'top'].includes(portGroup || '');
+        },
         validateConnection({ sourceCell, targetCell, sourceMagnet, targetMagnet }) {
           const result = validateConnection(
             sourceCell,
@@ -93,9 +96,6 @@ export const useGraphStore = defineStore('graph', () => {
             targetMagnet,
             graphRef.value!
           );
-          if (!result.valid) {
-            console.log('Connection validation failed:', result.reason);
-          }
           return result.valid;
         },
       },
@@ -177,18 +177,6 @@ export const useGraphStore = defineStore('graph', () => {
 
     graphRef.value.on('connecting:start', () => {
       showStatusMessage('从输出桩（绿色）拖动到输入桩（蓝色）', 3000);
-    });
-
-    graphRef.value.on('node:mouseenter', ({ node }) => {
-      if (node) {
-        handlePortHighlight(node, true);
-      }
-    });
-
-    graphRef.value.on('node:mouseleave', ({ node }) => {
-      if (node) {
-        handlePortHighlight(node, false);
-      }
     });
 
     graphRef.value.on('edge:connected', ({ edge }) => {
@@ -463,7 +451,7 @@ export const useGraphStore = defineStore('graph', () => {
 
   interface NodeWithPorts {
     getPorts: () => NodePort[];
-    portProp: (portId: string, path: string, value: number) => void;
+    setPortProp: (portId: string, path: string, value: number) => void;
   }
 
   interface NodePort {
@@ -475,7 +463,13 @@ export const useGraphStore = defineStore('graph', () => {
     const nodeWithPorts = node as NodeWithPorts;
     const ports = nodeWithPorts.getPorts();
     ports.forEach((port: NodePort) => {
-      nodeWithPorts.portProp(port.id || '', 'attrs/circle/r', portInteractionStyles.nodeHover.r);
+      if (port.group === 'right' || port.group === 'bottom') {
+        nodeWithPorts.setPortProp(
+          port.id || '',
+          'attrs/circle/r',
+          portInteractionStyles.nodeHover.r
+        );
+      }
     });
   };
 
@@ -483,17 +477,8 @@ export const useGraphStore = defineStore('graph', () => {
     const nodeWithPorts = node as NodeWithPorts;
     const ports = nodeWithPorts.getPorts();
     ports.forEach((port: NodePort) => {
-      nodeWithPorts.portProp(port.id || '', 'attrs/circle/r', portInteractionStyles.default.r);
-    });
-  };
-
-  const handlePortHighlight = (node: unknown, highlight: boolean) => {
-    const nodeWithPorts = node as NodeWithPorts;
-    const ports = nodeWithPorts.getPorts();
-    const targetR = highlight ? portInteractionStyles.portHover.r : portInteractionStyles.default.r;
-    ports.forEach((port: NodePort) => {
-      if (port.group === 'top' || port.group === 'left') {
-        nodeWithPorts.portProp(port.id || '', 'attrs/circle/r', targetR);
+      if (port.group === 'right' || port.group === 'bottom') {
+        nodeWithPorts.setPortProp(port.id || '', 'attrs/circle/r', portInteractionStyles.default.r);
       }
     });
   };
