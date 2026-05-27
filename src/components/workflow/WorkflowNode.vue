@@ -25,22 +25,47 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject } from 'vue';
+import { computed, inject, ref, onMounted, onUnmounted } from 'vue';
 import { nodeRegistry } from '@/config/workflow/node-registry';
 import { getIconPath } from '@/utils/node-utils';
+import type { Graph } from '@antv/x6';
 
 interface GetNodeFn {
-  (): { getData: () => { type?: string } } | undefined;
+  (): { getData: () => { type?: string }; id: string } | undefined;
+}
+
+interface GetGraphFn {
+  (): Graph | undefined;
 }
 
 const getNode = inject<GetNodeFn>('getNode');
+const getGraph = inject<GetGraphFn>('getGraph');
 const node = getNode?.();
+const graph = getGraph?.();
 const nodeData = node?.getData?.() || {};
+const nodeId = node?.id || '';
 const config = computed(() => nodeRegistry[nodeData.type || '']);
 
+const isSelected = ref(false);
+
+const updateSelectedStatus = () => {
+  if (graph && nodeId) {
+    isSelected.value = graph.isSelected(nodeId);
+  }
+};
+
 const containerStyle = computed(() => ({
-  borderColor: '#e5e5e5',
+  borderColor: isSelected.value ? '#5a57ff' : '#e5e5e5',
 }));
+
+onMounted(() => {
+  updateSelectedStatus();
+  graph?.on('selection:changed', updateSelectedStatus);
+});
+
+onUnmounted(() => {
+  graph?.off('selection:changed', updateSelectedStatus);
+});
 </script>
 
 <style scoped></style>

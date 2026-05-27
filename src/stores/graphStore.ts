@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { Graph, Node, Edge } from '@antv/x6';
+import { Graph, Node, Edge, Selection } from '@antv/x6';
 import { register } from '@antv/x6-vue-shape';
 import { defaultGraphOptions, nodeStyle, edgeStyle } from '@/config/workflow/graph-options';
 import { nodeRegistry, portGroups, portInteractionStyles } from '@/config/workflow/node-registry';
@@ -34,6 +34,7 @@ export const useGraphStore = defineStore('graph', () => {
       container: HTMLElement;
       width: number;
       height: number;
+      panning: boolean;
       connecting: {
         createEdge?: () => Edge;
         validateConnection?: (params: {
@@ -50,6 +51,7 @@ export const useGraphStore = defineStore('graph', () => {
       container,
       width: container.offsetWidth,
       height: container.offsetHeight,
+      panning: true,
       connecting: {
         ...(defaultGraphOptions.connecting as Record<string, unknown>),
         createEdge() {
@@ -68,6 +70,20 @@ export const useGraphStore = defineStore('graph', () => {
     };
 
     graphRef.value = new Graph(options as unknown as ConstructorParameters<typeof Graph>[0]);
+
+    graphRef.value.use(
+      new Selection({
+        enabled: true, // 启用选择功能
+        multiple: true, // 允许选择多个元素
+        rubberband: true, // 是否启用框选节点功能
+        rubberNode: true, // 启用节点选择
+        rubberEdge: false, // 启用边选择
+        modifiers: 'shift', // 同用选择多个元素
+        strict: false, // 允许选择非连续元素
+        movable: true, // 允许移动元素
+        showNodeSelectionBox: true, // 显示节点选择框
+      })
+    );
 
     graphRef.value.on('node:click', ({ node }: { node: Node }) => {
       selectedNode.value = node;
