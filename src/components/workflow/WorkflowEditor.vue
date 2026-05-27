@@ -9,12 +9,9 @@
       @clear="handleClear"
       @export="handleExport"
       @import="handleImport"
-      @run="handleRun"
-      @stop="handleStop"
     />
     <div class="flex-1 flex overflow-hidden">
-      <NodePanel />
-      <div class="flex-1 flex flex-col">
+      <div class="flex-1 flex flex-col relative">
         <div
           ref="containerRef"
           class="flex-1 bg-gray-50"
@@ -30,13 +27,24 @@
         @update-label="handleUpdateLabel"
       />
     </div>
+
+    <BottomToolbar
+      :zoom="currentZoom"
+      :min-zoom="0.2"
+      :max-zoom="2"
+      @zoom-in="handleZoomIn"
+      @zoom-out="handleZoomOut"
+      @run="handleRun"
+      @stop="handleStop"
+      @add-node="handleAddNode"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import Toolbar from './Toolbar.vue'
-import NodePanel from './NodePanel.vue'
+import BottomToolbar from './BottomToolbar.vue'
 import InspectorPanel from './InspectorPanel.vue'
 import RunPanel from './RunPanel.vue'
 import { useGraph } from '@/composables/workflow/useGraph'
@@ -44,6 +52,7 @@ import { useExecutor } from '@/composables/workflow/useExecutor'
 
 const showRunPanel = ref(false)
 const containerRef = ref<HTMLElement | null>(null)
+const currentZoom = ref(1)
 
 const {
   initGraph,
@@ -55,7 +64,8 @@ const {
   clearCanvas,
   zoomIn,
   zoomOut,
-  resetZoom
+  resetZoom,
+  addNode
 } = useGraph()
 
 const { startExecution, stopExecution, workflowState } = useExecutor()
@@ -74,14 +84,33 @@ watch(workflowState, (state) => {
   showRunPanel.value = state.isRunning || Object.keys(state.executionStates).length > 0
 })
 
-const handleZoomIn = () => zoomIn()
-const handleZoomOut = () => zoomOut()
-const handleResetZoom = () => resetZoom()
+const handleZoomIn = () => {
+  zoomIn()
+  updateZoom()
+}
+
+const handleZoomOut = () => {
+  zoomOut()
+  updateZoom()
+}
+
+const handleResetZoom = () => {
+  resetZoom()
+  currentZoom.value = 1
+}
+
+const updateZoom = () => {
+  const scale = (graphRef.value as unknown as { getScale: () => number })?.getScale?.()
+  if (scale) {
+    currentZoom.value = scale
+  }
+}
 
 const handleUndo = () => {
   const history = (graphRef.value as any)?.history
   history?.undo?.()
 }
+
 const handleRedo = () => {
   const history = (graphRef.value as any)?.history
   history?.redo?.()
@@ -130,6 +159,15 @@ const handleRun = async () => {
 
 const handleStop = () => {
   stopExecution()
+}
+
+const handleAddNode = (type: string) => {
+  if (!containerRef.value) return
+  
+  const rect = containerRef.value.getBoundingClientRect()
+  const x = rect.width / 2 - 60
+  const y = rect.height / 2 - 40
+  addNode(type, x, y)
 }
 
 const handleUpdateLabel = (_label: string) => {}
