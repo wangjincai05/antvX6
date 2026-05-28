@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref, type Ref } from 'vue';
 import { Keyboard } from '@antv/x6';
-import type { Graph } from '@antv/x6';
-import { ZOOM_MIN, ZOOM_MAX, ZOOM_STEP, ZOOM_OUT_STEP } from '@/config/constants';
+import type { Graph, Cell } from '@antv/x6';
+import { ZOOM_MIN, ZOOM_MAX, STATUS_MESSAGES } from '@/config/constants';
 
 interface CellWithData {
   data?: { type?: string };
@@ -42,10 +42,10 @@ export const useKeyboardStore = defineStore('keyboard', () => {
       const selected = graph.getSelectedCells();
       const toRemove = selected.filter((cell: CellWithData) => cell.data?.type !== 'INPUT');
       if (toRemove.length > 0) {
-        graph.removeCells(toRemove as unknown as Parameters<typeof graph.removeCells>[0]);
-        showMessage(`已删除 ${toRemove.length} 个节点`);
+        graph.removeCells(toRemove as Cell[]);
+        showMessage(STATUS_MESSAGES.nodeDeleted(toRemove.length));
       } else {
-        showMessage('未选择任何节点');
+        showMessage(STATUS_MESSAGES.noNodeSelected);
       }
     };
 
@@ -54,29 +54,25 @@ export const useKeyboardStore = defineStore('keyboard', () => {
   };
 
   const bindZoomShortcuts = (graph: Graph, showMessage: (msg: string) => void) => {
-    graph.bindKey(['ctrl++', 'ctrl+='], (e) => {
+    const ZOOM_STEP_VALUE = 0.1;
+
+    graph.bindKey(['ctrl+[', 'meta+['], (e) => {
       e.preventDefault();
-      const currentScale = (graph as unknown as { getScale: () => number }).getScale();
-      const zoomGraph = graph as unknown as { zoomTo: (scale: number) => void };
-      if (currentScale < ZOOM_MAX) {
-        const newScale = Math.min(currentScale * ZOOM_STEP, ZOOM_MAX);
-        zoomGraph.zoomTo(newScale);
-        showMessage(`缩放: ${Math.round(newScale * 100)}%`);
+      const zoomLevel = Number(graph.zoom().toFixed(1));
+      if (zoomLevel > ZOOM_MIN) {
+        graph.zoom(-ZOOM_STEP_VALUE);
       } else {
-        showMessage('已达到最大缩放比例');
+        showMessage(STATUS_MESSAGES.zoomMin);
       }
     });
 
-    graph.bindKey(['ctrl+-'], (e) => {
+    graph.bindKey(['ctrl+]', 'meta+]'], (e) => {
       e.preventDefault();
-      const currentScale = (graph as unknown as { getScale: () => number }).getScale();
-      const zoomGraph = graph as unknown as { zoomTo: (scale: number) => void };
-      if (currentScale > ZOOM_MIN) {
-        const newScale = Math.max(currentScale * ZOOM_OUT_STEP, ZOOM_MIN);
-        zoomGraph.zoomTo(newScale);
-        showMessage(`缩放: ${Math.round(newScale * 100)}%`);
+      const zoomLevel = Number(graph.zoom().toFixed(1));
+      if (zoomLevel < ZOOM_MAX) {
+        graph.zoom(ZOOM_STEP_VALUE);
       } else {
-        showMessage('已达到最小缩放比例');
+        showMessage(STATUS_MESSAGES.zoomMax);
       }
     });
   };
