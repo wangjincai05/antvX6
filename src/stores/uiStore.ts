@@ -1,10 +1,16 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, type Ref } from 'vue';
 import { Dnd, type Graph, type Node } from '@antv/x6';
 import { nodeRegistry, portGroups } from '@/config/workflow/node-registry';
 import { useGraphStore } from './graphStore';
 
 const loopNodeTypes = ['LOOP_BREAK'];
+
+export interface PortClickContext {
+  sourceNode: Node;
+  sourcePortId: string;
+  targetPosition: { x: number; y: number };
+}
 
 const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
   (window as unknown as { $toast: (options: { message: string; type?: string }) => void }).$toast?.(
@@ -18,6 +24,20 @@ const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'inf
 export const useUiStore = defineStore('ui', () => {
   const isDragging = ref(false);
   const dragNodeType = ref<string | null>(null);
+  const showNodeSelectPanel: Ref<boolean> = ref(false);
+  const panelPosition: Ref<{ x: number; y: number }> = ref({ x: 0, y: 0 });
+  const portClickContext: Ref<PortClickContext | null> = ref(null);
+
+  const showNodePanel = (position: { x: number; y: number }, context: PortClickContext) => {
+    panelPosition.value = position;
+    portClickContext.value = context;
+    showNodeSelectPanel.value = true;
+  };
+
+  const hideNodePanel = () => {
+    showNodeSelectPanel.value = false;
+    portClickContext.value = null;
+  };
 
   const startDrag = (nodeType: string) => {
     isDragging.value = true;
@@ -102,6 +122,11 @@ export const useUiStore = defineStore('ui', () => {
   return {
     isDragging,
     dragNodeType,
+    showNodeSelectPanel,
+    panelPosition,
+    portClickContext,
+    showNodePanel,
+    hideNodePanel,
     startDrag,
     endDrag,
     handleDragStart,

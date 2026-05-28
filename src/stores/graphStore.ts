@@ -1,13 +1,14 @@
 import { defineStore } from 'pinia';
 import { ref, type Ref } from 'vue';
-import { Graph, Edge, Node, Selection } from '@antv/x6';
+import { Graph, Edge, Node, Selection, ValidateConnectionArgs } from '@antv/x6';
 import { register } from '@antv/x6-vue-shape';
 import { defaultGraphOptions, nodeStyle, edgeStyle } from '@/config/workflow/graph-options';
 import { nodeRegistry, portGroups, portInteractionStyles } from '@/config/workflow/node-registry';
 import { useSelectionStore } from './selectionStore';
 import { useHistoryStore } from './historyStore';
 import { useKeyboardStore } from './keyboardStore';
-import { validateConnection } from '@/utils/connection';
+import { useUiStore } from './uiStore';
+import { validateConnection, isOutputPort, getInputPortId } from '@/utils/connection';
 import type { NodeData, EdgeData, CellWithData, GraphNode } from '@/types';
 import WorkflowNode from '@/components/workflow/WorkflowNode.vue';
 import { COLORS } from '@/config/constants';
@@ -19,6 +20,7 @@ export const useGraphStore = defineStore('graph', () => {
   const selectionStore = useSelectionStore();
   const historyStore = useHistoryStore();
   const keyboardStore = useKeyboardStore();
+  const uiStore = useUiStore();
 
   const showStatusMessage = (message: string, duration: number = 2000) => {
     statusMessage.value = message;
@@ -50,6 +52,7 @@ export const useGraphStore = defineStore('graph', () => {
           sourceMagnet: unknown;
           targetMagnet: unknown;
         }) => boolean;
+        allowBlank?: (this: Graph, args: ValidateConnectionArgs) => boolean;
       } & Record<string, unknown>;
     }
 
@@ -82,6 +85,12 @@ export const useGraphStore = defineStore('graph', () => {
             graphRef.value!
           );
           return result.valid;
+        },
+        allowBlank(this: Graph, args: ValidateConnectionArgs) {
+          const { edge, edgeView } = args;
+          if (!edge) return false;
+          handleConnectingEnd(edgeView?.targetPoint || { x: 0, y: 0 }, edge);
+          return true;
         },
       },
     };
@@ -128,6 +137,10 @@ export const useGraphStore = defineStore('graph', () => {
 
     graphRef.value.on('edge:connected', () => {
       showStatusMessage('连线创建成功');
+    });
+
+    graphRef.value.on('node:click', ({ node, e }: { node: Node; e: MouseEvent }) => {
+      handlePortClick(node, e);
     });
 
     const width =
@@ -413,6 +426,96 @@ export const useGraphStore = defineStore('graph', () => {
     return node?.getData?.()?.properties || {};
   };
 
+  const handlePortClick = (node: Node, e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const portElement = target.closest('[port-group]');
+    if (!portElement) return;
+
+    const portGroup = portElement.getAttribute('port-group');
+    if (!isOutputPort(portGroup)) return;
+
+    const portId = portElement.getAttribute('port');
+    if (!portId) return;
+
+    const nodePosition = node.position();
+    const nodeSize = node.size();
+    let panelX = nodePosition.x;
+    let panelY = nodePosition.y;
+
+    if (portGroup === 'right') {
+      panelX = nodePosition.x + nodeSize.width;
+      panelY = nodePosition.y + nodeSize.height / 2;
+    } else if (portGroup === 'bottom') {
+      panelX = nodePosition.x + nodeSize.width / 2;
+      panelY = nodePosition.y + nodeSize.height;
+    }
+
+    const canvasElement = graphRef.value?.container as HTMLElement;
+    const rect = canvasElement?.getBoundingClientRect();
+    const scale = (graphRef.value as unknown as { getScale: () => number }).getScale?.() || 1;
+
+    const viewportX = (rect?.left || 0) + panelX * scale;
+    const viewportY = (rect?.top || 0) + panelY * scale;
+
+    uiStore.showNodePanel(
+      { x: viewportX, y: viewportY },
+      {
+        sourceNode: node,
+        sourcePortId: portId,
+        targetPosition: { x: panelX + 150, y: panelY - nodeStyle.height / 2 },
+      }
+    );
+  };
+
+  const handleConnectingEnd = (targetPoint: { x: number; y: number }, edge: Edge | null) => {
+    if (!edge) return;
+
+    const sourceCell = edge.getSourceCell();
+    const sourcePortId = edge.getSourcePortId?.();
+
+    if (!sourceCell || !sourcePortId) {
+      edge.remove();
+      return;
+    }
+
+    const targetCell = edge.getTargetCell();
+    if (targetCell) {
+      return;
+    }
+
+    edge.remove();
+
+    uiStore.showNodePanel(targetPoint, {
+      sourceNode: sourceCell as Node,
+      sourcePortId,
+      targetPosition: targetPoint,
+    });
+  };
+
+  const createNodeAndConnect = (nodeType: string) => {
+    const context = uiStore.portClickContext;
+    if (!context) return;
+
+    const { sourceNode, sourcePortId, targetPosition } = context;
+
+    const newNode = addNode(nodeType, targetPosition.x, targetPosition.y);
+    if (!newNode) {
+      uiStore.hideNodePanel();
+      return;
+    }
+
+    const targetPortId = getInputPortId(sourcePortId);
+
+    graphRef.value?.addEdge({
+      ...edgeStyle,
+      source: { cell: sourceNode.id, port: sourcePortId },
+      target: { cell: newNode.id, port: targetPortId },
+    });
+
+    uiStore.hideNodePanel();
+    showStatusMessage('节点创建成功');
+  };
+
   return {
     graphRef,
     statusMessage,
@@ -433,5 +536,8 @@ export const useGraphStore = defineStore('graph', () => {
     getNodeProperties,
     handleNodeMouseOver,
     handleNodeMouseOut,
+    handlePortClick,
+    handleConnectingEnd,
+    createNodeAndConnect,
   };
 });

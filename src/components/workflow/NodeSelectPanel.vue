@@ -1,83 +1,96 @@
 <template>
-  <div
-    ref="panelRef"
-    class="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-80 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-50"
-    :style="{ maxHeight: maxHeight }"
-  >
-    <div class="p-3 border-b border-gray-100">
-      <input
-        v-model="searchQuery"
-        type="text"
-        placeholder="搜索节点..."
-        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-      />
-    </div>
+  <Teleport to="body">
+    <div
+      v-if="isVisible"
+      ref="panelRef"
+      class="fixed w-80 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-50"
+      :style="panelStyle"
+    >
+      <div class="p-3 border-b border-gray-100">
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="搜索节点..."
+          class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+        />
+      </div>
 
-    <div class="max-h-[50vh] overflow-y-auto">
-      <div
-        v-for="category in filteredCategories"
-        :key="category.name"
-        class="border-b border-gray-50"
-      >
-        <div class="px-4 py-2 bg-gray-50">
-          <span class="text-sm font-medium text-gray-700">{{ category.name }}</span>
-        </div>
+      <div class="max-h-[50vh] overflow-y-auto">
+        <div
+          v-for="category in filteredCategories"
+          :key="category.name"
+          class="border-b border-gray-50"
+        >
+          <div class="px-4 py-2 bg-gray-50">
+            <span class="text-sm font-medium text-gray-700">{{ category.name }}</span>
+          </div>
 
-        <div class="px-2 pb-2 space-y-1">
-          <div
-            v-for="node in category.nodes"
-            :key="node.type"
-            class="w-full px-3 py-2 flex items-center gap-3 hover:bg-blue-50 rounded-lg transition-colors cursor-grab active:cursor-grabbing"
-            :draggable="true"
-            @dragstart="(e) => handleDragStart(e, node.type)"
-            @dragover="handleDragOver"
-            @click="handleSelect(node.type)"
-          >
-            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-              <img
-                v-if="node.iconType === 'image'"
-                :src="getIconPath(node.icon)"
-                :alt="node.name"
-                class="w-5 h-5"
-              />
-              <span v-else class="text-lg">{{ node.icon }}</span>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="text-sm font-medium text-gray-800 truncate">{{ node.name }}</div>
-              <div class="text-xs text-gray-500 truncate">{{ node.description }}</div>
+          <div class="px-2 pb-2 space-y-1">
+            <div
+              v-for="node in category.nodes"
+              :key="node.type"
+              class="w-full px-3 py-2 flex items-center gap-3 hover:bg-blue-50 rounded-lg transition-colors cursor-grab active:cursor-grabbing"
+              :draggable="true"
+              @dragstart="(e) => handleDragStart(e, node.type)"
+              @dragover="handleDragOver"
+              @click="handleSelect(node.type)"
+            >
+              <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                <img
+                  v-if="node.iconType === 'image'"
+                  :src="getIconPath(node.icon)"
+                  :alt="node.name"
+                  class="w-5 h-5"
+                />
+                <span v-else class="text-lg">{{ node.icon }}</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-gray-800 truncate">{{ node.name }}</div>
+                <div class="text-xs text-gray-500 truncate">{{ node.description }}</div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div v-if="filteredCategories.length === 0" class="p-8 text-center">
-        <svg
-          class="w-12 h-12 text-gray-300 mx-auto mb-3"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <p class="text-sm text-gray-500">未找到匹配的节点</p>
+        <div v-if="filteredCategories.length === 0" class="p-8 text-center">
+          <svg
+            class="w-12 h-12 text-gray-300 mx-auto mb-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <p class="text-sm text-gray-500">未找到匹配的节点</p>
+        </div>
       </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { nodeRegistry, type NodeConfig } from '@/config/workflow/node-registry';
 import { useUiStore } from '@/stores/uiStore';
+import { useGraphStore } from '@/stores/graphStore';
 
-defineProps<{
-  anchor?: HTMLElement | null;
-}>();
+const props = withDefaults(
+  defineProps<{
+    visible?: boolean;
+    position?: { x: number; y: number };
+    anchor?: HTMLElement | null;
+  }>(),
+  {
+    visible: true,
+    position: () => ({ x: 0, y: 0 }),
+    anchor: null,
+  }
+);
 
 const emit = defineEmits<{
   (e: 'select', type: string): void;
@@ -88,7 +101,56 @@ const panelRef = ref<HTMLElement | null>(null);
 const searchQuery = ref('');
 
 const uiStore = useUiStore();
+const graphStore = useGraphStore();
 const { handleDragStart: dndHandleDragStart, handleDragOver } = uiStore;
+
+const PANEL_WIDTH = 320;
+const PANEL_HEIGHT = 400;
+
+const isVisible = computed(() => {
+  if (props.anchor !== null) {
+    return props.visible;
+  }
+  return uiStore.showNodeSelectPanel;
+});
+
+const currentPosition = computed(() => {
+  if (props.anchor !== null) {
+    const rect = props.anchor.getBoundingClientRect();
+    return {
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10,
+    };
+  }
+  return props.position;
+});
+
+const panelStyle = computed(() => {
+  let left = currentPosition.value.x - PANEL_WIDTH / 2;
+  let top = currentPosition.value.y + (props.anchor !== null ? -PANEL_HEIGHT - 10 : 10);
+
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  if (left < 10) left = 10;
+  if (left + PANEL_WIDTH > viewportWidth - 10) left = viewportWidth - PANEL_WIDTH - 10;
+  if (top + PANEL_HEIGHT > viewportHeight - 10) top = viewportHeight - PANEL_HEIGHT - 10;
+  if (top < 10) top = 10;
+
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
+    maxHeight: `${Math.floor(viewportHeight * 0.6)}px`,
+  };
+});
+
+watch(isVisible, async (newVal) => {
+  if (newVal) {
+    await nextTick();
+    const input = panelRef.value?.querySelector('input');
+    input?.focus();
+  }
+});
 
 interface Category {
   name: string;
@@ -145,11 +207,6 @@ const filteredCategories = computed(() => {
     .filter((category) => category.nodes.length > 0);
 });
 
-const maxHeight = computed(() => {
-  const canvasHeight = window.innerHeight;
-  return `${Math.floor(canvasHeight * 0.6)}px`;
-});
-
 const getIconPath = (iconName: string) => {
   return `/src/assets/images/${iconName}.png`;
 };
@@ -160,7 +217,12 @@ const handleDragStart = (event: DragEvent, nodeType: string) => {
 };
 
 const handleSelect = (type: string) => {
-  emit('select', type);
+  const context = uiStore.portClickContext;
+  if (context) {
+    graphStore.createNodeAndConnect(type);
+  } else {
+    emit('select', type);
+  }
 };
 
 const handleClickOutside = (event: MouseEvent) => {

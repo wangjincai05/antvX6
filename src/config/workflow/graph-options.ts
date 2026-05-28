@@ -58,7 +58,7 @@ export const defaultGraphOptions = {
     },
     anchor: CONNECTION_CONFIG.anchor,
     connectionPoint: CONNECTION_CONFIG.connectionPoint,
-    allowBlank: false,
+    allowBlank: true,
     allowLoop: false,
     highlight: true,
     snap: {

@@ -11,6 +11,16 @@ export function isInputPort(portGroup: string | null | undefined): boolean {
   return INPUT_PORT_GROUPS.includes(portGroup || '');
 }
 
+export function getInputPortId(sourcePortId: string): string {
+  if (sourcePortId.includes('right')) {
+    return 'in-left';
+  }
+  if (sourcePortId.includes('bottom')) {
+    return 'in-top';
+  }
+  return 'in-left';
+}
+
 export function validateConnection(
   sourceCell: unknown,
   targetCell: unknown,

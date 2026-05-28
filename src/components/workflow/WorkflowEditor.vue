@@ -44,6 +44,12 @@
         {{ statusMessage }}
       </div>
     </Transition>
+
+    <NodeSelectPanel
+      :visible="uiStore.showNodeSelectPanel"
+      :position="uiStore.panelPosition"
+      @close="uiStore.hideNodePanel"
+    />
   </div>
 </template>
 
@@ -51,12 +57,14 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { useGraphStore } from '@/stores/graphStore';
 import { useWorkflowStore } from '@/stores/workflowStore';
+import { useUiStore } from '@/stores/uiStore';
 import { useToast } from '@/composables/useToast';
 import type { InspectorNode } from '@/types/inspector';
 import Toolbar from './Toolbar.vue';
 import BottomToolbar from './BottomToolbar.vue';
 import InspectorPanel from './InspectorPanel.vue';
 import RunPanel from './RunPanel.vue';
+import NodeSelectPanel from './NodeSelectPanel.vue';
 
 const toast = useToast();
 
@@ -66,6 +74,7 @@ const currentZoom = ref(1);
 
 const graphStore = useGraphStore();
 const workflowStore = useWorkflowStore();
+const uiStore = useUiStore();
 
 const inspectorSelectedNode = computed(
   () => graphStore.selectionStore.selectedNode as InspectorNode | null
