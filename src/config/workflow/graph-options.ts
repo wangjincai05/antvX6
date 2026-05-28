@@ -68,6 +68,7 @@ export const defaultGraphOptions = {
   interacting: {
     arrowheadMovable: true,
   },
+  virtual: { enabled: true, margin: 200 },
   highlighting: {
     magnetAvailable: {
       name: 'stroke',
