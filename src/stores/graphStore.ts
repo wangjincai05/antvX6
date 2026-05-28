@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, type Ref } from 'vue';
-import { Graph, Edge, Node, Selection, ValidateConnectionArgs } from '@antv/x6';
+import { Graph, Edge, Node, Selection, ValidateConnectionArgs, Clipboard } from '@antv/x6';
 import { register } from '@antv/x6-vue-shape';
 import { defaultGraphOptions, nodeStyle, edgeStyle } from '@/config/workflow/graph-options';
 import { nodeRegistry, portGroups, portInteractionStyles } from '@/config/workflow/node-registry';
@@ -111,6 +111,12 @@ export const useGraphStore = defineStore('graph', () => {
       })
     );
 
+    graphRef.value.use(
+      new Clipboard({
+        enabled: true,
+      })
+    );
+
     keyboardStore.bindKeyboardPlugin(graphRef.value);
     historyStore.bindHistoryPlugin(graphRef.value);
     selectionStore.bindSelectionEvents(graphRef.value);
@@ -153,6 +159,8 @@ export const useGraphStore = defineStore('graph', () => {
 
     keyboardStore.bindAllShortcuts(graphRef.value, showStatusMessage);
     historyStore.bindHistoryShortcuts(graphRef.value, showStatusMessage);
+
+    graphRef.value.cleanHistory();
 
     return graphRef.value;
   };

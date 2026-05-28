@@ -77,9 +77,54 @@ export const useKeyboardStore = defineStore('keyboard', () => {
     });
   };
 
+  const bindCopyPasteShortcuts = (graph: Graph, showMessage: (msg: string) => void) => {
+    const OFFSET = 50;
+
+    graph.bindKey(['ctrl+c', 'meta+c'], (e) => {
+      e.preventDefault();
+      const selected = graph.getSelectedCells();
+
+      if (selected.length === 0) {
+        showMessage(STATUS_MESSAGES.noNodeSelected);
+        return;
+      }
+
+      const copyableNodes = selected.filter((cell: CellWithData) => cell.data?.type !== 'INPUT');
+
+      if (copyableNodes.length === 0) {
+        showMessage(STATUS_MESSAGES.startNodeCannotCopy);
+        return;
+      }
+
+      if (copyableNodes.length < selected.length) {
+        showMessage(STATUS_MESSAGES.startNodeCannotCopy);
+      }
+
+      graph.copy(copyableNodes as Cell[]);
+      showMessage(STATUS_MESSAGES.nodeCopied(copyableNodes.length));
+    });
+
+    graph.bindKey(['ctrl+v', 'meta+v'], (e) => {
+      e.preventDefault();
+      try {
+        const pastedCells = graph.paste({ offset: OFFSET });
+        graph.cleanSelection();
+        graph.select(pastedCells);
+        if (pastedCells && pastedCells.length > 0) {
+          showMessage(STATUS_MESSAGES.nodePasted(pastedCells.length));
+        } else {
+          showMessage(STATUS_MESSAGES.clipboardEmpty);
+        }
+      } catch {
+        showMessage(STATUS_MESSAGES.clipboardEmpty);
+      }
+    });
+  };
+
   const bindAllShortcuts = (graph: Graph, showMessage: (msg: string) => void) => {
     bindDeleteShortcuts(graph, showMessage);
     bindZoomShortcuts(graph, showMessage);
+    bindCopyPasteShortcuts(graph, showMessage);
   };
 
   return {
@@ -89,6 +134,7 @@ export const useKeyboardStore = defineStore('keyboard', () => {
     bindKeyboardPlugin,
     bindDeleteShortcuts,
     bindZoomShortcuts,
+    bindCopyPasteShortcuts,
     bindAllShortcuts,
   };
 });

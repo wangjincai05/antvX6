@@ -52,6 +52,10 @@ export const STATUS_MESSAGES = {
   workflowExported: '工作流已导出',
   workflowImported: '工作流已导入',
   canvasCleared: '画布已清空',
+  nodeCopied: (count: number) => `已复制 ${count} 个节点`,
+  nodePasted: (count: number) => `已粘贴 ${count} 个节点`,
+  startNodeCannotCopy: '开始节点不能复制',
+  clipboardEmpty: '剪贴板为空',
 };
 
 export const VALIDATION_ERRORS = {
