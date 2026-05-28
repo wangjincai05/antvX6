@@ -413,7 +413,19 @@ export const useGraphStore = defineStore('graph', () => {
     const node = graphRef.value.getCellById(nodeId);
     if (node) {
       node.attr('label/text', label);
+      const currentData = node.getData?.() || {};
+      node.setData({ ...currentData, label });
       showStatusMessage('节点名称已更新');
+    }
+  };
+
+  const updateNodeDescription = (nodeId: string, description: string) => {
+    if (!graphRef.value) return;
+    const node = graphRef.value.getCellById(nodeId);
+    if (node) {
+      const currentData = node.getData?.() || {};
+      node.setData({ ...currentData, description });
+      showStatusMessage('节点描述已更新');
     }
   };
 
@@ -545,6 +557,7 @@ export const useGraphStore = defineStore('graph', () => {
     importWorkflow,
     showStatusMessage,
     updateNodeLabel,
+    updateNodeDescription,
     updateNodeProperty,
     getNodeProperties,
     handleNodeMouseOver,

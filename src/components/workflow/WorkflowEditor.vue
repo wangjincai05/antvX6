@@ -19,6 +19,7 @@
           v-if="inspectorSelectedNode"
           :selected-node="inspectorSelectedNode"
           @update-label="handleUpdateLabel"
+          @update-description="handleUpdateDescription"
           @update-properties="handleUpdateProperties"
           class="absolute right-0 top-0 h-full z-40 shadow-xl"
         />
@@ -82,6 +83,7 @@ const {
   resetZoom,
   addNode,
   updateNodeLabel,
+  updateNodeDescription,
   updateNodeProperty,
 } = graphStore;
 
@@ -195,6 +197,12 @@ const handleAddNode = (type: string) => {
 const handleUpdateLabel = (label: string) => {
   if (graphStore.selectionStore.selectedNode) {
     updateNodeLabel(graphStore.selectionStore.selectedNode.id, label);
+  }
+};
+
+const handleUpdateDescription = (description: string) => {
+  if (graphStore.selectionStore.selectedNode) {
+    updateNodeDescription(graphStore.selectionStore.selectedNode.id, description);
   }
 };
 

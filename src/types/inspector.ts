@@ -1,6 +1,7 @@
 export interface NodeData {
   type?: string;
   label?: string;
+  description?: string;
   properties?: Record<string, unknown>;
 }
 
@@ -9,6 +10,7 @@ export interface InspectorNode {
   data?: NodeData;
   getData?: () => NodeData;
   label?: string;
+  description?: string;
   position: () => { x: number; y: number };
   setLabel?: (label: string) => void;
   setData?: (data: NodeData) => void;

@@ -1,7 +1,7 @@
 <template>
   <div
     class="flex items-center gap-3 p-3 bg-white rounded-lg border-2 cursor-default"
-    :title="config?.description || ''"
+    :title="customDescription || config?.description || ''"
     :style="containerStyle"
   >
     <img
@@ -18,8 +18,8 @@
       <span class="text-white font-bold text-lg">{{ config?.icon }}</span>
     </div>
     <div class="min-w-0 flex-1">
-      <div class="text-sm font-medium text-gray-800">{{ config?.name }}</div>
-      <div class="text-xs text-gray-500 truncate">{{ config?.description }}</div>
+      <div class="text-sm font-medium text-gray-800">{{ displayLabel }}</div>
+      <div class="text-xs text-gray-500 truncate">{{ displayDescription }}</div>
     </div>
   </div>
 </template>
@@ -31,7 +31,9 @@ import { getIconPath } from '@/utils/node-utils';
 import type { Graph } from '@antv/x6';
 
 interface GetNodeFn {
-  (): { getData: () => { type?: string }; id: string } | undefined;
+  ():
+    | { getData: () => { type?: string; label?: string; description?: string }; id: string }
+    | undefined;
 }
 
 interface GetGraphFn {
@@ -42,9 +44,27 @@ const getNode = inject<GetNodeFn>('getNode');
 const getGraph = inject<GetGraphFn>('getGraph');
 const node = getNode?.();
 const graph = getGraph?.();
-const nodeData = node?.getData?.() || {};
 const nodeId = node?.id || '';
-const config = computed(() => nodeRegistry[nodeData.type || '']);
+
+const nodeData = ref(node?.getData?.() || {});
+
+const config = computed(() => nodeRegistry[nodeData.value.type || '']);
+
+const displayLabel = computed(() => {
+  if (nodeData.value.label) {
+    return nodeData.value.label;
+  }
+  return config.value?.name || '';
+});
+
+const displayDescription = computed(() => {
+  if (nodeData.value.description) {
+    return nodeData.value.description;
+  }
+  return config.value?.description || '';
+});
+
+const customDescription = computed(() => nodeData.value.description);
 
 const isSelected = ref(false);
 
@@ -54,17 +74,27 @@ const updateSelectedStatus = () => {
   }
 };
 
+const updateNodeData = () => {
+  const currentNode = getNode?.();
+  if (currentNode) {
+    nodeData.value = currentNode.getData?.() || {};
+  }
+};
+
 const containerStyle = computed(() => ({
   borderColor: isSelected.value ? '#5a57ff' : '#e5e5e5',
 }));
 
 onMounted(() => {
   updateSelectedStatus();
+  updateNodeData();
   graph?.on('selection:changed', updateSelectedStatus);
+  graph?.on('node:change:data', updateNodeData);
 });
 
 onUnmounted(() => {
   graph?.off('selection:changed', updateSelectedStatus);
+  graph?.off('node:change:data', updateNodeData);
 });
 </script>
 
