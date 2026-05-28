@@ -61,6 +61,9 @@ export const defaultGraphOptions = {
     allowBlank: true,
     allowLoop: false,
     highlight: true,
+    interacting: {
+      arrowheadMovable: true,
+    },
     snap: {
       radius: SNAP_CONFIG.radius,
     },
