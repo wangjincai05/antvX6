@@ -12,23 +12,29 @@ import { validateConnection, isOutputPort, getInputPortId } from '@/utils/connec
 import type { NodeData, EdgeData, CellWithData, GraphNode } from '@/types';
 import WorkflowNode from '@/components/workflow/WorkflowNode.vue';
 import { COLORS } from '@/config/constants';
+import { useToast } from '@/composables/useToast';
 
 export const useGraphStore = defineStore('graph', () => {
   const graphRef: Ref<Graph | null> = ref(null);
-  const statusMessage: Ref<string | null> = ref(null);
 
   const selectionStore = useSelectionStore();
   const historyStore = useHistoryStore();
   const keyboardStore = useKeyboardStore();
   const uiStore = useUiStore();
+  const toast = useToast();
 
   const showStatusMessage = (message: string, duration: number = 2000) => {
-    statusMessage.value = message;
-    setTimeout(() => {
-      if (statusMessage.value === message) {
-        statusMessage.value = null;
-      }
-    }, duration);
+    if (!message || typeof message !== 'string') {
+      console.warn('showStatusMessage: invalid message parameter');
+      return;
+    }
+
+    if (typeof duration !== 'number' || duration < 0) {
+      console.warn('showStatusMessage: invalid duration parameter, using default 2000ms');
+      duration = 2000;
+    }
+
+    toast.info(message, { duration });
   };
 
   const initGraph = (container: HTMLElement) => {
@@ -526,7 +532,6 @@ export const useGraphStore = defineStore('graph', () => {
 
   return {
     graphRef,
-    statusMessage,
     selectionStore,
     historyStore,
     keyboardStore,

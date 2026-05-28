@@ -36,15 +36,6 @@
       @add-node="handleAddNode"
     />
 
-    <Transition name="fade">
-      <div
-        v-if="statusMessage"
-        class="absolute top-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg text-sm z-50"
-      >
-        {{ statusMessage }}
-      </div>
-    </Transition>
-
     <NodeSelectPanel
       :visible="uiStore.showNodeSelectPanel"
       :position="uiStore.panelPosition"
@@ -90,7 +81,6 @@ const {
   zoomOut,
   resetZoom,
   addNode,
-  statusMessage,
   updateNodeLabel,
   updateNodeProperty,
 } = graphStore;

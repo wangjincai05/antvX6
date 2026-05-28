@@ -115,3 +115,5 @@ export const DRAG_DROP_CONFIG = {
   loopNodeTypes: ['LOOP_BREAK'],
   loopContainerType: 'LOOP',
 };
+
+export type StatusMessageCallback = (message: string, duration?: number) => void;

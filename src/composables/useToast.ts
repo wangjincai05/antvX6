@@ -1,4 +1,3 @@
-import { getCurrentInstance, type ComponentInternalInstance } from 'vue';
 import type { ToastItem } from '@/components/common/Toast.vue';
 
 interface ToastOptions {
@@ -12,12 +11,15 @@ interface ToastApi {
   info: (message: string, options?: ToastOptions) => void;
 }
 
-export function useToast(): ToastApi {
-  const instance = getCurrentInstance() as ComponentInternalInstance;
+interface WindowWithToast extends Window {
+  $toast?: (toast: { message: string; type?: ToastItem['type']; duration?: number }) => void;
+}
 
+export function useToast(): ToastApi {
   const emitToast = (type: ToastItem['type'], message: string, options?: ToastOptions) => {
-    if (instance?.appContext.config.globalProperties.$toast) {
-      instance.appContext.config.globalProperties.$toast({
+    const toastFn = (window as WindowWithToast).$toast;
+    if (toastFn) {
+      toastFn({
         message,
         type,
         duration: options?.duration,

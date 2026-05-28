@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, type Ref } from 'vue';
 import { History } from '@antv/x6';
 import type { Graph } from '@antv/x6';
+import type { StatusMessageCallback } from '@/config/constants';
 
 interface HistoryState {
   canUndo: boolean;
@@ -20,7 +21,7 @@ export const useHistoryStore = defineStore('history', () => {
     historyEnabled.value = false;
   };
 
-  const undo = (graph: Graph, showMessage: (msg: string) => void) => {
+  const undo = (graph: Graph, showMessage: StatusMessageCallback) => {
     const history = graph as unknown as {
       canUndo: () => boolean;
       undo: () => void;
@@ -34,7 +35,7 @@ export const useHistoryStore = defineStore('history', () => {
     }
   };
 
-  const redo = (graph: Graph, showMessage: (msg: string) => void) => {
+  const redo = (graph: Graph, showMessage: StatusMessageCallback) => {
     const history = graph as unknown as {
       canRedo: () => boolean;
       redo: () => void;
@@ -76,7 +77,7 @@ export const useHistoryStore = defineStore('history', () => {
     updateHistoryState(graph);
   };
 
-  const bindHistoryShortcuts = (graph: Graph, showMessage: (msg: string) => void) => {
+  const bindHistoryShortcuts = (graph: Graph, showMessage: StatusMessageCallback) => {
     graph.bindKey(['ctrl+z', 'meta+z'], (e) => {
       e.preventDefault();
       undo(graph, showMessage);

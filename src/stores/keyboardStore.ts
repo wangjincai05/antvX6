@@ -2,7 +2,12 @@ import { defineStore } from 'pinia';
 import { ref, type Ref } from 'vue';
 import { Keyboard } from '@antv/x6';
 import type { Graph, Cell } from '@antv/x6';
-import { ZOOM_MIN, ZOOM_MAX, STATUS_MESSAGES } from '@/config/constants';
+import {
+  ZOOM_MIN,
+  ZOOM_MAX,
+  STATUS_MESSAGES,
+  type StatusMessageCallback,
+} from '@/config/constants';
 
 interface CellWithData {
   data?: { type?: string };
@@ -36,7 +41,7 @@ export const useKeyboardStore = defineStore('keyboard', () => {
     );
   };
 
-  const bindDeleteShortcuts = (graph: Graph, showMessage: (msg: string) => void) => {
+  const bindDeleteShortcuts = (graph: Graph, showMessage: StatusMessageCallback) => {
     const deleteCells = (e: Event) => {
       e.preventDefault();
       const selected = graph.getSelectedCells();
@@ -53,7 +58,7 @@ export const useKeyboardStore = defineStore('keyboard', () => {
     graph.bindKey('backspace', deleteCells);
   };
 
-  const bindZoomShortcuts = (graph: Graph, showMessage: (msg: string) => void) => {
+  const bindZoomShortcuts = (graph: Graph, showMessage: StatusMessageCallback) => {
     const ZOOM_STEP_VALUE = 0.1;
 
     graph.bindKey(['ctrl+[', 'meta+['], (e) => {
@@ -77,7 +82,7 @@ export const useKeyboardStore = defineStore('keyboard', () => {
     });
   };
 
-  const bindCopyPasteShortcuts = (graph: Graph, showMessage: (msg: string) => void) => {
+  const bindCopyPasteShortcuts = (graph: Graph, showMessage: StatusMessageCallback) => {
     const OFFSET = 50;
 
     graph.bindKey(['ctrl+c', 'meta+c'], (e) => {
@@ -121,7 +126,7 @@ export const useKeyboardStore = defineStore('keyboard', () => {
     });
   };
 
-  const bindAllShortcuts = (graph: Graph, showMessage: (msg: string) => void) => {
+  const bindAllShortcuts = (graph: Graph, showMessage: StatusMessageCallback) => {
     bindDeleteShortcuts(graph, showMessage);
     bindZoomShortcuts(graph, showMessage);
     bindCopyPasteShortcuts(graph, showMessage);
