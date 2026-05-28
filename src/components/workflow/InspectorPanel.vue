@@ -1,5 +1,5 @@
 <template>
-  <div class="w-72 bg-white border-l border-gray-200 flex flex-col" v-show="showPanel">
+  <div class="w-72 bg-white border-l border-gray-200 flex flex-col">
     <div class="p-4 border-b border-gray-200">
       <div class="flex items-center gap-2">
         <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,8 +123,6 @@ const emit = defineEmits<{
 
 const nodeLabel = ref('');
 
-const showPanel = ref(false);
-
 const linkedProperties = ref<Record<string, string>>({
   executionTimeout: '30秒',
   retryCount: '3次',
@@ -142,7 +140,6 @@ watch(
   () => props.selectedNode,
   (node) => {
     if (node) {
-      showPanel.value = true;
       const nodeData = node.getData?.() || {};
       nodeLabel.value = node.label || nodeData.label || '';
       if (nodeData.properties) {
@@ -150,10 +147,7 @@ watch(
           Object.entries(nodeData.properties).map(([k, v]) => [k, String(v)])
         );
       }
-    } else {
-      showPanel.value = false;
     }
-    console.log(showPanel.value);
   }
 );
 

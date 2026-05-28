@@ -10,16 +10,19 @@
       @export="handleExport"
       @import="handleImport"
     />
-    <div class="flex-1 flex overflow-hidden">
-      <div class="flex-1 flex flex-col relative">
-        <div ref="containerRef" class="flex-1 bg-gray-50" />
-        <RunPanel v-if="showRunPanel" class="border-t border-gray-200" />
-      </div>
-      <InspectorPanel
-        :selected-node="inspectorSelectedNode"
-        @update-label="handleUpdateLabel"
-        @update-properties="handleUpdateProperties"
-      />
+    <div class="flex-1 flex flex-col relative">
+      <div ref="containerRef" class="flex-1 bg-gray-50" />
+      <RunPanel v-if="showRunPanel" class="border-t border-gray-200" />
+
+      <Transition name="slide">
+        <InspectorPanel
+          v-if="inspectorSelectedNode"
+          :selected-node="inspectorSelectedNode"
+          @update-label="handleUpdateLabel"
+          @update-properties="handleUpdateProperties"
+          class="absolute right-0 top-0 h-full z-40 shadow-xl"
+        />
+      </Transition>
     </div>
 
     <BottomToolbar
@@ -217,5 +220,18 @@ const handleUpdateProperties = (properties: Record<string, string>) => {
 .fade-leave-to {
   opacity: 0;
   transform: translate(-50%, -10px);
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.slide-enter-from,
+.slide-leave-to {
+  transform: translateX(100%);
+  opacity: 0;
 }
 </style>

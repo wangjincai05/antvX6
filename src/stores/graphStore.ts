@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, type Ref } from 'vue';
-import { Graph, Edge, Selection } from '@antv/x6';
+import { Graph, Edge, Node, Selection } from '@antv/x6';
 import { register } from '@antv/x6-vue-shape';
 import { defaultGraphOptions, nodeStyle, edgeStyle } from '@/config/workflow/graph-options';
 import { nodeRegistry, portGroups, portInteractionStyles } from '@/config/workflow/node-registry';
@@ -112,6 +112,14 @@ export const useGraphStore = defineStore('graph', () => {
 
     graphRef.value.on('edge:mouseleave', ({ edge }: { edge: Edge }) => {
       highlightEdge(edge, false);
+    });
+
+    graphRef.value.on('node:mouseover', ({ node }: { node: Node }) => {
+      handleNodeMouseOver(node);
+    });
+
+    graphRef.value.on('node:mouseout', ({ node }: { node: Node }) => {
+      handleNodeMouseOut(node);
     });
 
     graphRef.value.on('connecting:start', () => {
