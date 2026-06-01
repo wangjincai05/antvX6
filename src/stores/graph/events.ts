@@ -298,8 +298,8 @@ export function bindEvents(
               hasChange = true;
             }
 
-            if ((inflatedBBox as unknown as { y: number }).y < y) {
-              y = (inflatedBBox as unknown as { y: number }).y;
+            if ((inflatedBBox as unknown as { y: number }).y - 50 < y) {
+              y = (inflatedBBox as unknown as { y: number }).y - 50;
               hasChange = true;
             }
 

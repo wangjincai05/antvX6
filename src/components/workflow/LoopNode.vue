@@ -2,9 +2,10 @@
   <div
     class="loop-node-container bg-white rounded-lg border-2 transition-all duration-300 h-full flex flex-col"
     :class="{ collapsed: isCollapsed }"
+    :style="containerStyle"
   >
     <div
-      class="node-header flex items-center gap-2 p-3 cursor-pointer select-none flex-shrink-0"
+      class="node-header flex items-center gap-2 p-3 cursor-pointer select-none flex-shrink-0 rounded-lg"
       :class="{ 'hover:bg-gray-50': !isEditing }"
     >
       <img :src="getIconPath('icon-loop')" alt="循环" class="w-6 h-6 flex-shrink-0" />
@@ -38,7 +39,7 @@
     </div>
 
     <div
-      class="collapsed-drop-hint p-2 border-t border-gray-100 bg-gray-50 flex-1 flex items-center justify-center"
+      class="collapsed-drop-hint p-2 border-t border-gray-100 bg-gray-50 flex-1 flex items-center justify-center rounded-lg"
       v-show="!isCollapsed"
     >
       <div class="flex items-center justify-center gap-2 py-2 text-gray-400">
@@ -57,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, inject, watch } from 'vue';
+import { ref, computed, inject, watch, onMounted, onUnmounted } from 'vue';
 import { nodeRegistry } from '@/config/workflow/node-registry';
 import { getIconPath } from '@/utils/node-utils';
 import type { Graph, Node } from '@antv/x6';
@@ -84,9 +85,20 @@ const nodeId = node?.id || '';
 const nodeData = ref(node?.getData?.() || {});
 const isCollapsed = ref(false);
 const isEditing = ref(false);
+const isSelected = ref(false);
 const expandSize = ref<{ width: number; height: number } | null>(null);
 const COLLAPSED_WIDTH = 200;
 const COLLAPSED_HEIGHT = 55;
+
+const updateSelectedStatus = () => {
+  if (graph && nodeId) {
+    isSelected.value = graph.isSelected(nodeId);
+  }
+};
+
+const containerStyle = computed(() => ({
+  borderColor: isSelected.value ? '#5a57ff' : '#e5e5e5',
+}));
 
 const config = computed(() => nodeRegistry[nodeData.value.type || '']);
 
@@ -130,6 +142,15 @@ watch(isCollapsed, (val) => {
       loopNode.setData({ ...loopNode.getData(), collapsed: val });
     }
   }
+});
+
+onMounted(() => {
+  updateSelectedStatus();
+  graph?.on('selection:changed', updateSelectedStatus);
+});
+
+onUnmounted(() => {
+  graph?.off('selection:changed', updateSelectedStatus);
 });
 </script>
 
