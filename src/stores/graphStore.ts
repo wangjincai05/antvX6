@@ -1,6 +1,16 @@
 import { defineStore } from 'pinia';
 import { ref, type Ref } from 'vue';
-import { Graph, Edge, Node, Selection, ValidateConnectionArgs, Clipboard } from '@antv/x6';
+import {
+  Graph,
+  Edge,
+  Node,
+  Selection,
+  ValidateConnectionArgs,
+  Clipboard,
+  Cell,
+  NodeView,
+  CellView,
+} from '@antv/x6';
 import { register } from '@antv/x6-vue-shape';
 import { defaultGraphOptions, nodeStyle, edgeStyle } from '@/config/workflow/graph-options';
 import { nodeRegistry, portGroups, portInteractionStyles } from '@/config/workflow/node-registry';
@@ -11,8 +21,36 @@ import { useUiStore } from './uiStore';
 import { validateConnection, isOutputPort, getInputPortId } from '@/utils/connection';
 import type { NodeData, EdgeData, CellWithData, GraphNode } from '@/types';
 import WorkflowNode from '@/components/workflow/WorkflowNode.vue';
+import LoopNode from '@/components/workflow/LoopNode.vue';
 import { COLORS } from '@/config/constants';
 import { useToast } from '@/composables/useToast';
+
+interface EmbeddingValidateArgs {
+  child: Node;
+  parent: Node;
+  childView: CellView;
+  parentView: CellView;
+}
+
+interface GraphOptions {
+  container: HTMLElement;
+  width: number;
+  height: number;
+  panning: boolean;
+  connecting: {
+    createEdge?: () => Edge;
+    validateConnection?: (params: {
+      sourceCell: unknown;
+      targetCell: unknown;
+      sourceMagnet: unknown;
+      targetMagnet: unknown;
+    }) => boolean;
+    allowBlank?: (this: Graph, args: ValidateConnectionArgs) => boolean;
+  } & Record<string, unknown>;
+  embedding: {
+    validate?: (this: Graph, args: EmbeddingValidateArgs) => boolean;
+  } & Record<string, unknown>;
+}
 
 export const useGraphStore = defineStore('graph', () => {
   const graphRef: Ref<Graph | null> = ref(null);
@@ -45,22 +83,13 @@ export const useGraphStore = defineStore('graph', () => {
       component: WorkflowNode,
     });
 
-    interface GraphOptions {
-      container: HTMLElement;
-      width: number;
-      height: number;
-      panning: boolean;
-      connecting: {
-        createEdge?: () => Edge;
-        validateConnection?: (params: {
-          sourceCell: unknown;
-          targetCell: unknown;
-          sourceMagnet: unknown;
-          targetMagnet: unknown;
-        }) => boolean;
-        allowBlank?: (this: Graph, args: ValidateConnectionArgs) => boolean;
-      } & Record<string, unknown>;
-    }
+    register({
+      shape: 'loop-node',
+      width: 200,
+      height: 120,
+      component: LoopNode,
+      isGroup: true,
+    });
 
     const options: GraphOptions = {
       ...(defaultGraphOptions as Record<string, unknown>),
@@ -99,6 +128,52 @@ export const useGraphStore = defineStore('graph', () => {
           return true;
         },
       },
+      embedding: {
+        enabled: true,
+        findParent(this: Graph, args: { node: Node; view: NodeView }): Cell[] {
+          const { node } = args;
+          const bbox = node.getBBox();
+          return this.getNodes().filter((node) => {
+            const data = node.getData();
+            if (data && data.type === 'LOOP') {
+              const targetBBox = node.getBBox();
+              return bbox.isIntersectWithRect(targetBBox);
+            }
+            return false;
+          });
+        },
+        validate(this: Graph, args: EmbeddingValidateArgs) {
+          const { child } = args;
+          const data = child.getData();
+          // 1. 首先检查节点类型限制
+          const forbiddenComponents = ['LOOP', 'INPUT'];
+          if (forbiddenComponents.includes(data.type || '')) {
+            return false;
+          }
+
+          // 2. 获取当前画布中的顶层节点
+          const topLevelNodes = this.getNodes().filter((item) => !item.parent);
+
+          // 3. 检查节点是否已存在于画布中
+          const isExistingNode = topLevelNodes.some((item) => item.id === child.id);
+
+          // 4. 如果是新节点(不存在于画布中)，直接允许嵌入
+          if (!isExistingNode) {
+            return true;
+          }
+
+          // 5. 对于已存在的节点，需要满足：
+          // - 节点当前不在其他父节点中
+          // - 按住了ctrl键
+          // - 没有连接的边
+          if (!child.parent) {
+            const hasNoConnectedEdges = this.getConnectedEdges(child).length === 0;
+            return hasNoConnectedEdges && ctrlPressed;
+          }
+
+          return false;
+        },
+      },
     };
 
     graphRef.value = new Graph(options as unknown as ConstructorParameters<typeof Graph>[0]);
@@ -126,6 +201,155 @@ export const useGraphStore = defineStore('graph', () => {
     keyboardStore.bindKeyboardPlugin(graphRef.value);
     historyStore.bindHistoryPlugin(graphRef.value);
     selectionStore.bindSelectionEvents(graphRef.value);
+
+    let ctrlPressed = false;
+    const embedPadding = 5;
+
+    graphRef.value.on('node:embedding', ({ e }: { e: unknown }) => {
+      const mouseEvent = e as MouseEvent;
+      ctrlPressed = mouseEvent.metaKey || mouseEvent.ctrlKey;
+    });
+
+    graphRef.value.on('node:embedded', ({ node, parent }: { node: Node; parent?: Node }) => {
+      ctrlPressed = false;
+      // 确保循环节点的子节点 zIndex 高于循环节点
+      if (parent) {
+        const parentData = parent.getData();
+        if (parentData?.type === 'LOOP') {
+          const parentZIndex = parent.getZIndex() || 0;
+          node.setZIndex(parentZIndex + 1);
+        }
+      }
+    });
+
+    graphRef.value.on(
+      'node:change:size',
+      ({ node, options }: { node: Node; options: Record<string, unknown> }) => {
+        if (options.skipParentHandler) {
+          return;
+        }
+
+        const children = (node as unknown as { getChildren: () => Node[] }).getChildren?.();
+        if (children && children.length) {
+          node.prop('originSize', node.getSize());
+        }
+      }
+    );
+
+    graphRef.value.on(
+      'node:change:position',
+      ({ node, options }: { node: Node; options: Record<string, unknown> }) => {
+        if (options.skipParentHandler || ctrlPressed) {
+          return;
+        }
+        if (!node.isVisible()) return;
+        const children = (node as unknown as { getChildren: () => Node[] }).getChildren?.();
+        if (children && children.length) {
+          node.prop('originPosition', node.getPosition());
+        }
+        const parent = (node as unknown as { getParent: () => unknown }).getParent?.();
+        if (parent && (parent as unknown as { isNode: () => boolean }).isNode?.()) {
+          const parentNode = parent as Node;
+          let originSize = parentNode.prop('originSize') as { width: number; height: number };
+          if (originSize == null) {
+            originSize = parentNode.getSize();
+            parentNode.prop('originSize', originSize);
+          }
+
+          let originPosition = parentNode.prop('originPosition') as { x: number; y: number };
+          if (originPosition == null) {
+            originPosition = parentNode.getPosition();
+            parentNode.prop('originPosition', originPosition);
+          }
+
+          let x = originPosition.x;
+          let y = originPosition.y;
+          let cornerX = originPosition.x + originSize.width;
+          let cornerY = originPosition.y + originSize.height;
+          let hasChange = false;
+
+          const parentChildren = (
+            parentNode as unknown as { getChildren: () => Node[] }
+          ).getChildren?.();
+          if (parentChildren) {
+            parentChildren.forEach((child) => {
+              const bbox = (
+                child as unknown as {
+                  getBBox: () => {
+                    x: number;
+                    y: number;
+                    width: number;
+                    height: number;
+                    inflate: (padding: number) => unknown;
+                    getCorner: () => { x: number; y: number };
+                  };
+                }
+              ).getBBox?.();
+              if (!bbox) return;
+
+              const inflatedBBox = (
+                bbox as unknown as {
+                  inflate: (padding: number) => {
+                    x: number;
+                    y: number;
+                    width: number;
+                    height: number;
+                    getCorner: () => { x: number; y: number };
+                  };
+                }
+              ).inflate(embedPadding);
+              const corner = inflatedBBox.getCorner();
+
+              if (inflatedBBox.x < x) {
+                x = inflatedBBox.x;
+                hasChange = true;
+              }
+
+              if (inflatedBBox.y < y) {
+                y = inflatedBBox.y;
+                hasChange = true;
+              }
+
+              if (corner.x > cornerX) {
+                cornerX = corner.x;
+                hasChange = true;
+              }
+
+              if (corner.y > cornerY) {
+                cornerY = corner.y;
+                hasChange = true;
+              }
+            });
+          }
+
+          if (hasChange) {
+            parentNode.prop(
+              {
+                position: { x, y },
+                size: { width: cornerX - x, height: cornerY - y },
+              },
+              { skipParentHandler: true }
+            );
+          }
+        }
+      }
+    );
+
+    // 监听循环节点 zIndex 变化，同步更新子节点
+    graphRef.value.on(
+      'node:change:zIndex',
+      ({ node, current }: { node: Node; current: number }) => {
+        const nodeData = node.getData();
+        if (nodeData?.type === 'LOOP') {
+          const children = (node as unknown as { getChildren: () => Node[] }).getChildren?.();
+          if (children) {
+            children.forEach((child) => {
+              child.setZIndex(current + 1);
+            });
+          }
+        }
+      }
+    );
 
     graphRef.value.on('edge:mouseenter', ({ edge }: { edge: Edge }) => {
       highlightEdge(edge, true);
@@ -177,11 +401,41 @@ export const useGraphStore = defineStore('graph', () => {
     const config = nodeRegistry[type];
     if (!config) return null;
 
-    const node = graphRef.value.addNode({
-      shape: 'workflow-node',
+    const isLoopNode = type === 'LOOP';
+    const nodeConfig = getNodeConfig(type, label || config.name);
+
+    // 获取当前最大的 zIndex，确保新节点在最上层
+    const nodes = graphRef.value.getNodes();
+    let maxZIndex = 0;
+    nodes.forEach((n) => {
+      const zIndex = n.getZIndex() || 0;
+      if (zIndex > maxZIndex) {
+        maxZIndex = zIndex;
+      }
+    });
+
+    const cell = {
+      ...nodeConfig,
       x,
       y,
-      label: label || config.name,
+      isGroup: isLoopNode,
+      zIndex: maxZIndex + 1,
+    };
+    const node = graphRef.value.addNode(cell);
+    return node;
+  };
+
+  const getNodeConfig = (type: string, label: string) => {
+    const config = nodeRegistry[type];
+    if (!config) return {};
+
+    const isLoopNode = type === 'LOOP';
+
+    return {
+      shape: isLoopNode ? 'loop-node' : 'workflow-node',
+      width: isLoopNode ? 200 : nodeStyle.width,
+      height: isLoopNode ? 120 : nodeStyle.height,
+      label,
       attrs: {
         body: {
           stroke: COLORS.primary,
@@ -195,9 +449,7 @@ export const useGraphStore = defineStore('graph', () => {
         type,
         icon: config.icon,
       },
-    });
-
-    return node;
+    };
   };
 
   const clearCanvas = () => {
@@ -549,6 +801,7 @@ export const useGraphStore = defineStore('graph', () => {
     keyboardStore,
     initGraph,
     addNode,
+    getNodeConfig,
     clearCanvas,
     zoomIn,
     zoomOut,

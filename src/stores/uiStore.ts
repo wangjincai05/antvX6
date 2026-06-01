@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, type Ref } from 'vue';
 import { Dnd, type Graph, type Node } from '@antv/x6';
-import { nodeRegistry, portGroups } from '@/config/workflow/node-registry';
+import { nodeRegistry } from '@/config/workflow/node-registry';
 import { useGraphStore } from './graphStore';
 
 const loopNodeTypes = ['LOOP_BREAK'];
@@ -56,25 +56,15 @@ export const useUiStore = defineStore('ui', () => {
     const config = nodeRegistry[nodeType];
     if (!config) return;
 
-    const ports = config.ports;
+    const nodeConfig = graphStore.getNodeConfig(nodeType, config.name);
+    const isLoopNode = nodeType === 'LOOP';
 
-    const templateNode = (graphStore.graphRef as unknown as Graph).createNode({
-      shape: 'workflow-node',
-      label: config.name,
-      attrs: {
-        body: {
-          stroke: '#5f95ff',
-        },
-      },
-      ports: {
-        groups: portGroups,
-        items: ports,
-      },
-      data: {
-        type: nodeType,
-        icon: config.icon,
-      },
-    });
+    const cell = {
+      ...nodeConfig,
+      isGroup: isLoopNode,
+    };
+
+    const templateNode = (graphStore.graphRef as unknown as Graph).createNode(cell);
 
     interface NodeData {
       type: string;

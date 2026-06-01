@@ -12,6 +12,7 @@ import {
 interface CellWithData {
   data?: { type?: string };
   remove?: () => void;
+  getChildren?: () => Cell[];
 }
 
 export const useKeyboardStore = defineStore('keyboard', () => {
@@ -45,10 +46,35 @@ export const useKeyboardStore = defineStore('keyboard', () => {
     const deleteCells = (e: Event) => {
       e.preventDefault();
       const selected = graph.getSelectedCells();
-      const toRemove = selected.filter((cell: CellWithData) => cell.data?.type !== 'INPUT');
-      if (toRemove.length > 0) {
-        graph.removeCells(toRemove as Cell[]);
-        showMessage(STATUS_MESSAGES.nodeDeleted(toRemove.length));
+      const toRemove: Cell[] = [];
+
+      // 递归收集需要删除的节点
+      const collectNodesToRemove = (cells: Cell[]) => {
+        cells.forEach((cell) => {
+          const cellWithData = cell as CellWithData;
+          if (cellWithData.data?.type === 'INPUT') {
+            return;
+          }
+          toRemove.push(cell);
+
+          // 如果是循环节点，收集其所有子节点
+          if (cellWithData.data?.type === 'LOOP') {
+            const children = cellWithData.getChildren?.();
+            if (children && children.length > 0) {
+              collectNodesToRemove(children);
+            }
+          }
+        });
+      };
+
+      collectNodesToRemove(selected);
+
+      // 去重，防止重复删除
+      const uniqueToRemove = Array.from(new Set(toRemove));
+
+      if (uniqueToRemove.length > 0) {
+        graph.removeCells(uniqueToRemove);
+        showMessage(STATUS_MESSAGES.nodeDeleted(uniqueToRemove.length));
       } else {
         showMessage(STATUS_MESSAGES.noNodeSelected);
       }
