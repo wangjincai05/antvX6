@@ -46,7 +46,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useWorkflowStore } from '@/stores/workflowStore';
-import { useGraphStore } from '@/stores/graphStore';
+import { useGraphStore } from '@/stores/graph/index';
 
 const workflowStore = useWorkflowStore();
 const graphStore = useGraphStore();

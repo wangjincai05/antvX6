@@ -2,7 +2,8 @@ import { defineStore } from 'pinia';
 import { ref, type Ref } from 'vue';
 import { Dnd, type Graph, type Node } from '@antv/x6';
 import { nodeRegistry } from '@/config/workflow/node-registry';
-import { useGraphStore } from './graphStore';
+import { useGraphStore } from './graph/index';
+import { useToast } from '@/composables/useToast';
 
 const loopNodeTypes = ['LOOP_BREAK'];
 
@@ -12,21 +13,13 @@ export interface PortClickContext {
   targetPosition: { x: number; y: number };
 }
 
-const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
-  (window as unknown as { $toast: (options: { message: string; type?: string }) => void }).$toast?.(
-    {
-      message,
-      type,
-    }
-  );
-};
-
 export const useUiStore = defineStore('ui', () => {
   const isDragging = ref(false);
   const dragNodeType = ref<string | null>(null);
   const showNodeSelectPanel: Ref<boolean> = ref(false);
   const panelPosition: Ref<{ x: number; y: number }> = ref({ x: 0, y: 0 });
   const portClickContext: Ref<PortClickContext | null> = ref(null);
+  const toast = useToast();
 
   const showNodePanel = (position: { x: number; y: number }, context: PortClickContext) => {
     panelPosition.value = position;
@@ -92,7 +85,7 @@ export const useUiStore = defineStore('ui', () => {
 
         if (loopNodeTypes.includes(nodeData.type)) {
           if (!nodeUnder || nodeUnder.getData()?.type !== 'LOOP') {
-            showToast(`${config.name}节点只能放置在循环节点内`, 'warning');
+            toast.warning(`${config.name}节点只能放置在循环节点内`);
             return false;
           }
         }

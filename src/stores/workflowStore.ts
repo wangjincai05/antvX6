@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { WorkflowState } from '@/types/workflow';
-import { useGraphStore } from './graphStore';
+import { useGraphStore } from './graph/index';
 import { validateWorkflow } from '@/utils/dag-validator';
 import { getExecutionOrder } from '@/utils/topology-sort';
 
@@ -60,36 +60,10 @@ export const useWorkflowStore = defineStore('workflow', () => {
     state.startTime = Date.now();
     workflowState.value.currentNodeId = nodeId;
 
-    const graphStore = useGraphStore();
-    const node = graphStore.graphRef?.getCellById(nodeId);
-    const nodeType = node?.data?.type;
-
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     try {
-      switch (nodeType) {
-        case 'INPUT':
-        case 'OUTPUT':
-          state.status = 'completed';
-          break;
-        case 'LLM':
-        case 'KNOWLEDGE_BASE':
-        case 'PYTHON_CODE':
-        case 'HTTP':
-        case 'BRANCH':
-        case 'LOOP':
-        case 'LOOP_BREAK':
-        case 'VAR_ASSIGN':
-        case 'VAR_AGGREGATE':
-        case 'PLUGIN':
-        case 'AGENT':
-        case 'WORKFLOW':
-        case 'FILE_EXTRACT':
-          state.status = 'completed';
-          break;
-        default:
-          state.status = 'completed';
-      }
+      state.status = 'completed';
     } catch (error) {
       state.status = 'error';
       state.error = error instanceof Error ? error.message : '未知错误';

@@ -77,7 +77,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { nodeRegistry, type NodeConfig } from '@/config/workflow/node-registry';
 import { useUiStore } from '@/stores/uiStore';
-import { useGraphStore } from '@/stores/graphStore';
+import { useGraphStore } from '@/stores/graph/index';
 
 const props = withDefaults(
   defineProps<{
