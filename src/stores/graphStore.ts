@@ -1,16 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, type Ref } from 'vue';
-import {
-  Graph,
-  Edge,
-  Node,
-  Selection,
-  ValidateConnectionArgs,
-  Clipboard,
-  Cell,
-  NodeView,
-  CellView,
-} from '@antv/x6';
+import { Graph, Edge, Node, Selection, ValidateConnectionArgs, Clipboard, Cell } from '@antv/x6';
 import { register } from '@antv/x6-vue-shape';
 import { defaultGraphOptions, nodeStyle, edgeStyle } from '@/config/workflow/graph-options';
 import { nodeRegistry, portGroups, portInteractionStyles } from '@/config/workflow/node-registry';
@@ -19,7 +9,7 @@ import { useHistoryStore } from './historyStore';
 import { useKeyboardStore } from './keyboardStore';
 import { useUiStore } from './uiStore';
 import { validateConnection, isOutputPort, getInputPortId } from '@/utils/connection';
-import type { NodeData, EdgeData, CellWithData, GraphNode } from '@/types';
+import type { NodeData, EdgeData, CellWithData } from '@/types';
 import WorkflowNode from '@/components/workflow/WorkflowNode.vue';
 import LoopNode from '@/components/workflow/LoopNode.vue';
 import { COLORS } from '@/config/constants';
@@ -28,28 +18,6 @@ import { useToast } from '@/composables/useToast';
 interface EmbeddingValidateArgs {
   child: Node;
   parent: Node;
-  childView: CellView;
-  parentView: CellView;
-}
-
-interface GraphOptions {
-  container: HTMLElement;
-  width: number;
-  height: number;
-  panning: boolean;
-  connecting: {
-    createEdge?: () => Edge;
-    validateConnection?: (params: {
-      sourceCell: unknown;
-      targetCell: unknown;
-      sourceMagnet: unknown;
-      targetMagnet: unknown;
-    }) => boolean;
-    allowBlank?: (this: Graph, args: ValidateConnectionArgs) => boolean;
-  } & Record<string, unknown>;
-  embedding: {
-    validate?: (this: Graph, args: EmbeddingValidateArgs) => boolean;
-  } & Record<string, unknown>;
 }
 
 export const useGraphStore = defineStore('graph', () => {
@@ -63,12 +31,10 @@ export const useGraphStore = defineStore('graph', () => {
 
   const showStatusMessage = (message: string, duration: number = 2000) => {
     if (!message || typeof message !== 'string') {
-      console.warn('showStatusMessage: invalid message parameter');
       return;
     }
 
     if (typeof duration !== 'number' || duration < 0) {
-      console.warn('showStatusMessage: invalid duration parameter, using default 2000ms');
       duration = 2000;
     }
 
@@ -91,7 +57,7 @@ export const useGraphStore = defineStore('graph', () => {
       isGroup: true,
     });
 
-    const options: GraphOptions = {
+    const options = {
       ...(defaultGraphOptions as Record<string, unknown>),
       container,
       width: container.offsetWidth,
@@ -100,9 +66,7 @@ export const useGraphStore = defineStore('graph', () => {
       connecting: {
         ...(defaultGraphOptions.connecting as Record<string, unknown>),
         createEdge() {
-          return graphRef.value!.createEdge({
-            ...edgeStyle,
-          });
+          return graphRef.value!.createEdge({ ...edgeStyle });
         },
         validateMagnet(
           this: Graph,
@@ -111,7 +75,17 @@ export const useGraphStore = defineStore('graph', () => {
           const portGroup = magnet.getAttribute('port-group');
           return !['left', 'top'].includes(portGroup || '');
         },
-        validateConnection({ sourceCell, targetCell, sourceMagnet, targetMagnet }) {
+        validateConnection({
+          sourceCell,
+          targetCell,
+          sourceMagnet,
+          targetMagnet,
+        }: {
+          sourceCell: unknown;
+          targetCell: unknown;
+          sourceMagnet: unknown;
+          targetMagnet: unknown;
+        }) {
           const result = validateConnection(
             sourceCell,
             targetCell,
@@ -130,7 +104,7 @@ export const useGraphStore = defineStore('graph', () => {
       },
       embedding: {
         enabled: true,
-        findParent(this: Graph, args: { node: Node; view: NodeView }): Cell[] {
+        findParent(this: Graph, args: { node: Node; view: unknown }): Cell[] {
           const { node } = args;
           const bbox = node.getBBox();
           return this.getNodes().filter((node) => {
@@ -145,27 +119,18 @@ export const useGraphStore = defineStore('graph', () => {
         validate(this: Graph, args: EmbeddingValidateArgs) {
           const { child } = args;
           const data = child.getData();
-          // 1. 首先检查节点类型限制
           const forbiddenComponents = ['LOOP', 'INPUT'];
           if (forbiddenComponents.includes(data.type || '')) {
             return false;
           }
 
-          // 2. 获取当前画布中的顶层节点
           const topLevelNodes = this.getNodes().filter((item) => !item.parent);
-
-          // 3. 检查节点是否已存在于画布中
           const isExistingNode = topLevelNodes.some((item) => item.id === child.id);
 
-          // 4. 如果是新节点(不存在于画布中)，直接允许嵌入
           if (!isExistingNode) {
             return true;
           }
 
-          // 5. 对于已存在的节点，需要满足：
-          // - 节点当前不在其他父节点中
-          // - 按住了ctrl键
-          // - 没有连接的边
           if (!child.parent) {
             const hasNoConnectedEdges = this.getConnectedEdges(child).length === 0;
             return hasNoConnectedEdges && ctrlPressed;
@@ -192,11 +157,7 @@ export const useGraphStore = defineStore('graph', () => {
       })
     );
 
-    graphRef.value.use(
-      new Clipboard({
-        enabled: true,
-      })
-    );
+    graphRef.value.use(new Clipboard({ enabled: true }));
 
     keyboardStore.bindKeyboardPlugin(graphRef.value);
     historyStore.bindHistoryPlugin(graphRef.value);
@@ -212,7 +173,6 @@ export const useGraphStore = defineStore('graph', () => {
 
     graphRef.value.on('node:embedded', ({ node, parent }: { node: Node; parent?: Node }) => {
       ctrlPressed = false;
-      // 确保循环节点的子节点 zIndex 高于循环节点
       if (parent) {
         const parentData = parent.getData();
         if (parentData?.type === 'LOOP') {
@@ -243,10 +203,12 @@ export const useGraphStore = defineStore('graph', () => {
           return;
         }
         if (!node.isVisible()) return;
+
         const children = (node as unknown as { getChildren: () => Node[] }).getChildren?.();
         if (children && children.length) {
           node.prop('originPosition', node.getPosition());
         }
+
         const parent = (node as unknown as { getParent: () => unknown }).getParent?.();
         if (parent && (parent as unknown as { isNode: () => boolean }).isNode?.()) {
           const parentNode = parent as Node;
@@ -273,40 +235,23 @@ export const useGraphStore = defineStore('graph', () => {
           ).getChildren?.();
           if (parentChildren) {
             parentChildren.forEach((child) => {
-              const bbox = (
-                child as unknown as {
-                  getBBox: () => {
-                    x: number;
-                    y: number;
-                    width: number;
-                    height: number;
-                    inflate: (padding: number) => unknown;
-                    getCorner: () => { x: number; y: number };
-                  };
-                }
-              ).getBBox?.();
+              const bbox = (child as unknown as { getBBox: () => unknown }).getBBox?.();
               if (!bbox) return;
 
               const inflatedBBox = (
-                bbox as unknown as {
-                  inflate: (padding: number) => {
-                    x: number;
-                    y: number;
-                    width: number;
-                    height: number;
-                    getCorner: () => { x: number; y: number };
-                  };
-                }
+                bbox as unknown as { inflate: (padding: number) => unknown }
               ).inflate(embedPadding);
-              const corner = inflatedBBox.getCorner();
+              const corner = (
+                inflatedBBox as unknown as { getCorner: () => { x: number; y: number } }
+              ).getCorner();
 
-              if (inflatedBBox.x < x) {
-                x = inflatedBBox.x;
+              if ((inflatedBBox as unknown as { x: number }).x < x) {
+                x = (inflatedBBox as unknown as { x: number }).x;
                 hasChange = true;
               }
 
-              if (inflatedBBox.y < y) {
-                y = inflatedBBox.y;
+              if ((inflatedBBox as unknown as { y: number }).y < y) {
+                y = (inflatedBBox as unknown as { y: number }).y;
                 hasChange = true;
               }
 
@@ -324,10 +269,7 @@ export const useGraphStore = defineStore('graph', () => {
 
           if (hasChange) {
             parentNode.prop(
-              {
-                position: { x, y },
-                size: { width: cornerX - x, height: cornerY - y },
-              },
+              { position: { x, y }, size: { width: cornerX - x, height: cornerY - y } },
               { skipParentHandler: true }
             );
           }
@@ -335,7 +277,6 @@ export const useGraphStore = defineStore('graph', () => {
       }
     );
 
-    // 监听循环节点 zIndex 变化，同步更新子节点
     graphRef.value.on(
       'node:change:zIndex',
       ({ node, current }: { node: Node; current: number }) => {
@@ -404,23 +345,10 @@ export const useGraphStore = defineStore('graph', () => {
     const isLoopNode = type === 'LOOP';
     const nodeConfig = getNodeConfig(type, label || config.name);
 
-    // 获取当前最大的 zIndex，确保新节点在最上层
     const nodes = graphRef.value.getNodes();
-    let maxZIndex = 0;
-    nodes.forEach((n) => {
-      const zIndex = n.getZIndex() || 0;
-      if (zIndex > maxZIndex) {
-        maxZIndex = zIndex;
-      }
-    });
+    const maxZIndex = nodes.reduce((max, n) => Math.max(max, n.getZIndex() || 0), 0);
 
-    const cell = {
-      ...nodeConfig,
-      x,
-      y,
-      isGroup: isLoopNode,
-      zIndex: maxZIndex + 1,
-    };
+    const cell = { ...nodeConfig, x, y, isGroup: isLoopNode, zIndex: maxZIndex + 1 };
     const node = graphRef.value.addNode(cell);
     return node;
   };
@@ -436,19 +364,9 @@ export const useGraphStore = defineStore('graph', () => {
       width: isLoopNode ? 200 : nodeStyle.width,
       height: isLoopNode ? 120 : nodeStyle.height,
       label,
-      attrs: {
-        body: {
-          stroke: COLORS.primary,
-        },
-      },
-      ports: {
-        groups: portGroups,
-        items: config.ports,
-      },
-      data: {
-        type,
-        icon: config.icon,
-      },
+      attrs: { body: { stroke: COLORS.primary } },
+      ports: { groups: portGroups, items: config.ports },
+      data: { type, icon: config.icon },
     };
   };
 
@@ -486,23 +404,14 @@ export const useGraphStore = defineStore('graph', () => {
     zoomGraph.centerContent();
   };
 
-  interface ExportNode {
-    id: string;
-    data: { type?: string };
-    label?: string;
-    position: () => { x: number; y: number };
-  }
-
   const exportWorkflow = (): string => {
     if (!graphRef.value) return '{}';
 
-    const nodes: NodeData[] = graphRef.value.getNodes().map((node: ExportNode) => ({
+    const nodes: NodeData[] = graphRef.value.getNodes().map((node) => ({
       id: node.id,
-      type: node.data.type || 'task',
-      label: node.label || '',
-      properties: {
-        position: { x: node.position().x, y: node.position().y },
-      },
+      type: node.data?.type || 'task',
+      label: (node as unknown as { label?: string }).label || '',
+      properties: { position: { x: node.position().x, y: node.position().y } },
     }));
 
     const edges: EdgeData[] = graphRef.value.getEdges().map((edge) => ({
@@ -548,7 +457,9 @@ export const useGraphStore = defineStore('graph', () => {
       });
 
       if (!hasInput) {
-        const existingInput = graph.getNodes().find((n: GraphNode) => n.data?.type === 'INPUT');
+        const existingInput = graph
+          .getNodes()
+          .find((n: { data?: { type?: string } }) => n.data?.type === 'INPUT');
         if (existingInput) {
           const graphWithSize = graph as unknown as {
             getWidth?: () => number;
@@ -571,7 +482,7 @@ export const useGraphStore = defineStore('graph', () => {
         });
       });
     } catch {
-      console.error('Invalid workflow JSON');
+      // Invalid workflow JSON
     }
   };
 
@@ -626,24 +537,14 @@ export const useGraphStore = defineStore('graph', () => {
       edgeWithAttrs.addTools([
         {
           name: 'target-arrowhead',
-          args: {
-            attrs: {
-              fill: COLORS.error,
-            },
-          },
+          args: { attrs: { fill: COLORS.error } },
         },
         {
           name: 'button-remove',
           args: {
             attrs: {
-              body: {
-                fill: COLORS.error,
-                stroke: COLORS.nodeFill,
-                strokeWidth: 2,
-              },
-              label: {
-                fill: COLORS.nodeFill,
-              },
+              body: { fill: COLORS.error, stroke: COLORS.nodeFill, strokeWidth: 2 },
+              label: { fill: COLORS.nodeFill },
             },
             distance: -40,
             onClick: () => {
@@ -686,13 +587,7 @@ export const useGraphStore = defineStore('graph', () => {
     const node = graphRef.value.getCellById(nodeId);
     if (node) {
       const currentData = node.getData?.() || {};
-      const newData = {
-        ...currentData,
-        properties: {
-          ...currentData.properties,
-          [key]: value,
-        },
-      };
+      const newData = { ...currentData, properties: { ...currentData.properties, [key]: value } };
       node.setData(newData);
       showStatusMessage(`属性 "${key}" 已更新`);
     }
@@ -728,9 +623,10 @@ export const useGraphStore = defineStore('graph', () => {
       panelY = nodePosition.y + nodeSize.height;
     }
 
-    const canvasElement = graphRef.value?.container as HTMLElement;
+    const canvasElement = (graphRef.value as unknown as { container?: HTMLElement })
+      ?.container as HTMLElement;
     const rect = canvasElement?.getBoundingClientRect();
-    const scale = (graphRef.value as unknown as { getScale: () => number }).getScale?.() || 1;
+    const scale = (graphRef.value as unknown as { getScale?: () => number }).getScale?.() || 1;
 
     const viewportX = (rect?.left || 0) + panelX * scale;
     const viewportY = (rect?.top || 0) + panelY * scale;

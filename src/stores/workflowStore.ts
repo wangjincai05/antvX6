@@ -19,7 +19,6 @@ export const useWorkflowStore = defineStore('workflow', () => {
 
     const { valid, errors } = validateWorkflow(graphStore.graphRef);
     if (!valid) {
-      console.error('工作流验证失败:', errors);
       return { success: false, errors };
     }
 

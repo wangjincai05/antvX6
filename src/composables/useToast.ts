@@ -24,8 +24,6 @@ export function useToast(): ToastApi {
         type,
         duration: options?.duration,
       });
-    } else {
-      console.warn('Toast component not registered');
     }
   };
 

@@ -139,9 +139,9 @@ export function handleError(error: unknown): ErrorInfo {
   };
 }
 
-export function logError(error: unknown, context?: string): void {
+export function logError(error: unknown): void {
   const errorInfo = handleError(error);
-  console.error(`[Workflow Error${context ? `: ${context}` : ''}]`, errorInfo);
+  showError(errorInfo.message);
 }
 
 export function showError(error: unknown): void {

@@ -57,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, inject, onMounted, watch } from 'vue';
+import { ref, computed, inject, watch } from 'vue';
 import { nodeRegistry } from '@/config/workflow/node-registry';
 import { getIconPath } from '@/utils/node-utils';
 import type { Graph, Node } from '@antv/x6';
