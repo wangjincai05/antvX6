@@ -114,3 +114,8 @@ export interface X6GraphOptions {
   connecting?: Record<string, unknown>;
   embedding?: Record<string, unknown>;
 }
+
+export interface EmbeddingValidateArgs {
+  child: X6Node;
+  parent: X6Node;
+}

@@ -204,7 +204,7 @@ export function createNodeAndConnect(
 
 export function bindEvents(
   graphRef: { value: Graph | null },
-  toast: ReturnType<typeof useToast>,
+  _toast: ReturnType<typeof useToast>,
   uiStore: ReturnType<typeof useUiStore>,
   showStatusMessageFn: (message: string, duration?: number) => void,
   ctrlPressedRef?: { value: boolean }

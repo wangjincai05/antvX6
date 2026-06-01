@@ -1,4 +1,4 @@
-import type { Graph, Edge } from '@antv/x6';
+import type { Graph, Edge, Node, Cell } from '@antv/x6';
 import { Graph as X6Graph, Selection, Clipboard } from '@antv/x6';
 import { defaultGraphOptions, nodeStyle, edgeStyle } from '@/config/workflow/graph-options';
 import { useKeyboardStore } from '@/stores/keyboardStore';
@@ -74,27 +74,22 @@ export function initGraph(
     },
     embedding: {
       enabled: true,
-      findParent(
-        this: Graph,
-        args: { node: { getBBox: () => unknown; getData: () => { type?: string } } }
-      ): unknown[] {
+      findParent(this: Graph, args: { node: Node; view: unknown }): Cell[] {
         const { node } = args;
         const bbox = node.getBBox();
         return this.getNodes().filter((n) => {
           const data = n.getData();
           if (data && data.type === 'LOOP') {
+            if (data.collapsed === true) {
+              return false;
+            }
             const targetBBox = n.getBBox();
-            return (
-              bbox as unknown as { isIntersectWithRect: (rect: unknown) => boolean }
-            ).isIntersectWithRect(targetBBox);
+            return bbox.isIntersectWithRect(targetBBox);
           }
           return false;
         });
       },
-      validate(
-        this: Graph,
-        args: { child: { getData: () => { type?: string }; id: string } }
-      ): boolean {
+      validate(this: Graph, args: { child: Node; parent?: Node }): boolean {
         const { child } = args;
         const data = child.getData();
         const forbiddenComponents = ['LOOP', 'INPUT'];
@@ -102,9 +97,7 @@ export function initGraph(
           return false;
         }
 
-        const topLevelNodes = this.getNodes().filter(
-          (item) => !(item as unknown as { parent?: unknown }).parent
-        );
+        const topLevelNodes = this.getNodes().filter((item) => !item.parent);
         const isExistingNode = topLevelNodes.some((item) => item.id === child.id);
 
         if (!isExistingNode) {
@@ -112,8 +105,7 @@ export function initGraph(
         }
 
         if (!child.parent) {
-          const hasNoConnectedEdges =
-            this.getConnectedEdges(child as unknown as { id: string }).length === 0;
+          const hasNoConnectedEdges = this.getConnectedEdges(child).length === 0;
           return hasNoConnectedEdges && ctrlPressed.value;
         }
 

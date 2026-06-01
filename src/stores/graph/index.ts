@@ -1,10 +1,9 @@
 import { defineStore } from 'pinia';
 import { ref, type Ref } from 'vue';
-import type { Graph, Node } from '@antv/x6';
+import type { Graph, Node, Edge } from '@antv/x6';
 
 import { useSelectionStore } from '@/stores/selectionStore';
 import { useHistoryStore } from '@/stores/historyStore';
-import { useKeyboardStore } from '@/stores/keyboardStore';
 import { useUiStore } from '@/stores/uiStore';
 import { useToast } from '@/composables/useToast';
 
@@ -34,7 +33,6 @@ export const useGraphStore = defineStore('graph', () => {
 
   const selectionStore = useSelectionStore();
   const historyStore = useHistoryStore();
-  const keyboardStore = useKeyboardStore();
   const uiStore = useUiStore();
   const toast = useToast();
 
@@ -115,11 +113,8 @@ export const useGraphStore = defineStore('graph', () => {
     handlePortClick: (node: Node, e: MouseEvent) => {
       handlePortClick(graphRef, uiStore, node, e);
     },
-    handleConnectingEnd: (
-      targetPoint: { x: number; y: number },
-      edge: Parameters<typeof handleConnectingEnd>[1]
-    ) => {
-      handleConnectingEnd(uiStore, targetPoint, edge);
+    handleConnectingEnd: (targetPoint: { x: number; y: number }, edge: unknown) => {
+      handleConnectingEnd(uiStore, targetPoint, edge as Edge | null);
     },
     createNodeAndConnect: (nodeType: string) => {
       createNodeAndConnect(graphRef, uiStore, addGraphNode, toast, nodeType);

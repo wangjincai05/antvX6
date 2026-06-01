@@ -1,6 +1,5 @@
 import type { Graph, Node } from '@antv/x6';
 import type { NodeData, EdgeData } from '@/types';
-import { addNode } from './node-operations';
 
 export interface ImportNodeData {
   type: string;
