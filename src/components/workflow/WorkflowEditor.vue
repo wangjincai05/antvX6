@@ -21,6 +21,7 @@
           @update-label="handleUpdateLabel"
           @update-description="handleUpdateDescription"
           @update-properties="handleUpdateProperties"
+          @close="closeInspectorPanel"
           class="absolute right-0 top-0 h-full z-40 shadow-xl"
         />
       </Transition>
@@ -212,6 +213,10 @@ const handleUpdateProperties = (properties: Record<string, string>) => {
       updateNodeProperty(graphStore.selectionStore.selectedNode!.id, key, value);
     });
   }
+};
+
+const closeInspectorPanel = () => {
+  graphStore.selectionStore.clearSelection();
 };
 </script>
 

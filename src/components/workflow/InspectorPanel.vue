@@ -24,7 +24,7 @@
       </div>
       <button
         class="close-btn w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200"
-        @click="$emit('close')"
+        @click="closeInspectorPanel"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -192,6 +192,10 @@ const saveDescriptionEdit = () => {
 const cancelDescriptionEdit = () => {
   nodeDescription.value = originalDescriptionValue.value;
   isEditingDescription.value = false;
+};
+
+const closeInspectorPanel = () => {
+  emit('close');
 };
 </script>
 
