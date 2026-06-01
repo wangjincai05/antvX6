@@ -325,6 +325,10 @@ export function bindEvents(
     }
   );
 
+  graphRef.value.on('node:mousedown', ({ node }: { node: Node }) => {
+    node.toFront();
+  });
+
   graphRef.value.on('node:change:zIndex', ({ node, current }: { node: Node; current: number }) => {
     const nodeData = node.getData();
     if (nodeData?.type === 'LOOP') {
