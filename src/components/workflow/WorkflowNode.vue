@@ -9,6 +9,7 @@
       :src="getIconPath(config?.icon)"
       :alt="config?.name"
       class="w-10 h-10 rounded-lg flex items-center justify-center"
+      draggable="false"
     />
     <div
       v-else

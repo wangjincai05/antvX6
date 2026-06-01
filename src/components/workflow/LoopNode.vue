@@ -8,7 +8,12 @@
       class="node-header flex items-center gap-2 p-3 cursor-pointer select-none flex-shrink-0 rounded-lg"
       :class="{ 'hover:bg-gray-50': !isEditing }"
     >
-      <img :src="getIconPath('icon-loop')" alt="循环" class="w-6 h-6 flex-shrink-0" />
+      <img
+        :src="getIconPath('icon-loop')"
+        alt="循环"
+        class="w-6 h-6 flex-shrink-0"
+        draggable="false"
+      />
       <div class="flex-1 min-w-0">
         <div
           class="text-sm font-medium text-gray-800 truncate"
