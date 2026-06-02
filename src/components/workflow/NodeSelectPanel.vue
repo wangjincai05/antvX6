@@ -78,6 +78,7 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { nodeRegistry, type NodeConfig } from '@/config/workflow/node-registry';
 import { useUiStore } from '@/stores/uiStore';
 import { useGraphStore } from '@/stores/graph/index';
+import { getIconPath } from '@/utils/node-utils';
 
 const props = withDefaults(
   defineProps<{
@@ -206,17 +207,6 @@ const filteredCategories = computed(() => {
     }))
     .filter((category) => category.nodes.length > 0);
 });
-
-const iconResources = import.meta.glob('/src/assets/images/*.png', {
-  eager: true,
-  query: '?url',
-  import: 'default',
-});
-
-const getIconPath = (iconName: string) => {
-  const path = `/src/assets/images/${iconName}.png`;
-  return (iconResources[path] as string) || path;
-};
 
 const handleDragStart = (event: DragEvent, nodeType: string) => {
   dndHandleDragStart(event, nodeType);
