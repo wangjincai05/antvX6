@@ -1,8 +1,46 @@
+import type { Node } from '@antv/x6';
+
 const iconResources = import.meta.glob('/src/assets/images/*.png', {
   eager: true,
   query: '?url',
   import: 'default',
 });
+
+export const LOOP_NODE_TYPE = 'LOOP';
+
+export interface LoopParentResult {
+  isLoopChild: boolean;
+  loopNode: Node | null;
+}
+
+export const isLoopChildNode = (node: Node): LoopParentResult => {
+  let currentNode: Node | null | undefined = node;
+
+  while (currentNode) {
+    const parent = (
+      currentNode as unknown as { getParent: () => Node | null | undefined }
+    ).getParent?.();
+    if (!parent) {
+      break;
+    }
+
+    const parentData = (
+      parent as unknown as { getData: () => Record<string, unknown> }
+    ).getData?.();
+    if (parentData?.type === LOOP_NODE_TYPE) {
+      return { isLoopChild: true, loopNode: parent as Node };
+    }
+
+    currentNode = parent as Node;
+  }
+
+  return { isLoopChild: false, loopNode: null };
+};
+
+export const getLoopParentNode = (node: Node): Node | null => {
+  const result = isLoopChildNode(node);
+  return result.loopNode;
+};
 
 export const getIconPath = (iconName?: string): string => {
   const iconMap: Record<string, string> = {

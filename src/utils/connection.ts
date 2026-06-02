@@ -1,7 +1,49 @@
 import type { Cell, GraphEdge, Magnet } from '@/types';
+import type { Node } from '@antv/x6';
+import { isLoopChildNode } from './node-utils';
 
 export const OUTPUT_PORT_GROUPS = ['right', 'bottom'];
 export const INPUT_PORT_GROUPS = ['left', 'top'];
+
+export interface LoopValidationResult {
+  valid: boolean;
+  reason: string;
+}
+
+export function validateLoopNodeConnection(
+  sourceCell: unknown,
+  targetCell: unknown
+): LoopValidationResult {
+  const sourceNode = sourceCell as Node | null | undefined;
+  const targetNode = targetCell as Node | null | undefined;
+
+  if (!sourceNode || !targetNode) {
+    return { valid: true, reason: '' };
+  }
+
+  const sourceLoopResult = isLoopChildNode(sourceNode);
+  const targetLoopResult = isLoopChildNode(targetNode);
+
+  if (!sourceLoopResult.isLoopChild) {
+    return { valid: true, reason: '' };
+  }
+
+  if (!targetLoopResult.isLoopChild) {
+    return {
+      valid: false,
+      reason: '循环节点内部的子节点只能连接到同一循环节点内的其他子节点',
+    };
+  }
+
+  if (sourceLoopResult.loopNode?.id !== targetLoopResult.loopNode?.id) {
+    return {
+      valid: false,
+      reason: '循环节点内部的子节点只能连接到同一循环节点内的其他子节点',
+    };
+  }
+
+  return { valid: true, reason: '' };
+}
 
 export function isOutputPort(portGroup: string | null | undefined): boolean {
   return OUTPUT_PORT_GROUPS.includes(portGroup || '');
@@ -56,6 +98,11 @@ export function validateConnection(
 
   if (!isInputPort(targetPortGroup)) {
     return { valid: false, reason: '输出桩不能接收连线，请连接至输入桩（左侧或顶部）' };
+  }
+
+  const loopValidation = validateLoopNodeConnection(sourceCell, targetCell);
+  if (!loopValidation.valid) {
+    return { valid: false, reason: loopValidation.reason };
   }
 
   if (graph && sourceCellData?.id && targetCellData?.id) {

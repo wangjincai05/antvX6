@@ -11,6 +11,9 @@ import { addNode } from './node-operations';
 import { useToast } from '@/composables/useToast';
 import { showStatusMessage } from './helpers';
 
+let lastToastTime = 0;
+const TOAST_DELAY = 3000;
+
 export function initGraph(
   container: HTMLElement,
   graphRef: { value: Graph | null },
@@ -60,6 +63,13 @@ export function initGraph(
           targetMagnet,
           graphRef.value!
         );
+        if (!result.valid && result.reason) {
+          const now = Date.now();
+          if (now - lastToastTime > TOAST_DELAY) {
+            toast.warning(result.reason);
+            lastToastTime = now;
+          }
+        }
         return result.valid;
       },
       allowBlank(this: Graph, args: unknown) {

@@ -4,12 +4,16 @@ import { nodeStyle, edgeStyle } from '@/config/workflow/graph-options';
 import { portInteractionStyles } from '@/config/workflow/node-registry';
 import { useUiStore } from '@/stores/uiStore';
 import { useToast } from '@/composables/useToast';
-import { isOutputPort, getInputPortId } from '@/utils/connection';
+import { isOutputPort, getInputPortId, validateLoopNodeConnection } from '@/utils/connection';
 import { COLORS } from '@/config/constants';
 import { showStatusMessage } from './helpers';
 import { EMBED_PADDING } from './constants';
+import { isLoopChildNode } from '@/utils/node-utils';
 import WorkflowNode from '@/components/workflow/WorkflowNode.vue';
 import LoopNode from '@/components/workflow/LoopNode.vue';
+
+let lastEdgeToastTime = 0;
+const EDGE_TOAST_DELAY = 3000;
 
 export function registerNodes(): void {
   register({
@@ -184,7 +188,30 @@ export function createNodeAndConnect(
 
   const { sourceNode, sourcePortId, targetPosition } = context;
 
-  const newNode = addNode(nodeType, targetPosition.x, targetPosition.y);
+  const loopParentResult = isLoopChildNode(sourceNode);
+
+  let newNode: Node | null;
+
+  if (loopParentResult.isLoopChild && loopParentResult.loopNode) {
+    const loopNode = loopParentResult.loopNode;
+    const loopPosition = loopNode.position();
+    const loopSize = loopNode.size();
+
+    const relativeX = targetPosition.x - loopPosition.x;
+    const relativeY = targetPosition.y - loopPosition.y;
+
+    const clampedX = Math.max(20, Math.min(relativeX, loopSize.width - 140));
+    const clampedY = Math.max(60, Math.min(relativeY, loopSize.height - 60));
+
+    newNode = addNode(nodeType, loopPosition.x + clampedX, loopPosition.y + clampedY);
+
+    if (newNode && graphRef.value) {
+      (loopNode as unknown as { addChild: (node: Node) => void }).addChild(newNode);
+    }
+  } else {
+    newNode = addNode(nodeType, targetPosition.x, targetPosition.y);
+  }
+
   if (!newNode) {
     uiStore.hideNodePanel();
     return;
@@ -367,5 +394,39 @@ export function bindEvents(
 
   graphRef.value.on('node:click', ({ node, e }: { node: Node; e: MouseEvent }) => {
     handlePortClick(graphRef, uiStore, node, e);
+  });
+
+  graphRef.value.on('edge:change:target', ({ edge }: { edge: Edge }) => {
+    const sourceCell = edge.getSourceCell();
+    const targetCell = edge.getTargetCell();
+
+    if (sourceCell && targetCell && sourceCell.isNode() && targetCell.isNode()) {
+      const result = validateLoopNodeConnection(sourceCell, targetCell);
+      if (!result.valid) {
+        const now = Date.now();
+        if (now - lastEdgeToastTime > EDGE_TOAST_DELAY) {
+          _toast.warning(result.reason);
+          lastEdgeToastTime = now;
+        }
+        edge.remove();
+      }
+    }
+  });
+
+  graphRef.value.on('edge:change:source', ({ edge }: { edge: Edge }) => {
+    const sourceCell = edge.getSourceCell();
+    const targetCell = edge.getTargetCell();
+
+    if (sourceCell && targetCell && sourceCell.isNode() && targetCell.isNode()) {
+      const result = validateLoopNodeConnection(sourceCell, targetCell);
+      if (!result.valid) {
+        const now = Date.now();
+        if (now - lastEdgeToastTime > EDGE_TOAST_DELAY) {
+          _toast.warning(result.reason);
+          lastEdgeToastTime = now;
+        }
+        edge.remove();
+      }
+    }
   });
 }
