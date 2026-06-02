@@ -1,17 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { detectCycle, validateWorkflow } from '@/utils/dag-validator';
+import type { Graph, GraphNode, GraphEdge } from '@/types';
 
-const createMockNode = (id: string, type: string = 'task') => ({
+const createMockNode = (id: string, type: string = 'task'): GraphNode => ({
   id,
   data: { type },
 });
 
-const createMockEdge = (source: string, target: string) => ({
+const createMockEdge = (source: string, target: string): GraphEdge => ({
   getSourceCellId: () => source,
   getTargetCellId: () => target,
 });
 
-const createMockGraph = (nodes: unknown[], edges: unknown[]) => ({
+const createMockGraph = (nodes: GraphNode[], edges: GraphEdge[]): Graph => ({
   getNodes: () => nodes,
   getEdges: () => edges,
 });
@@ -48,8 +49,8 @@ describe('dag-validator', () => {
     });
 
     it('should handle empty graph', () => {
-      const nodes: unknown[] = [];
-      const edges: unknown[] = [];
+      const nodes: GraphNode[] = [];
+      const edges: GraphEdge[] = [];
       const graph = createMockGraph(nodes, edges);
 
       const result = detectCycle(graph);
@@ -58,7 +59,7 @@ describe('dag-validator', () => {
 
     it('should handle single node with no edges', () => {
       const nodes = [createMockNode('A')];
-      const edges: unknown[] = [];
+      const edges: GraphEdge[] = [];
       const graph = createMockGraph(nodes, edges);
 
       const result = detectCycle(graph);
@@ -136,8 +137,8 @@ describe('dag-validator', () => {
     });
 
     it('should fail validation for empty workflow', () => {
-      const nodes: unknown[] = [];
-      const edges: unknown[] = [];
+      const nodes: GraphNode[] = [];
+      const edges: GraphEdge[] = [];
       const graph = createMockGraph(nodes, edges);
 
       const result = validateWorkflow(graph);

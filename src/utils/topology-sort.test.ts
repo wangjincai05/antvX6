@@ -6,14 +6,28 @@ import {
   getNodeDependents,
 } from '@/utils/topology-sort';
 
-const createMockNode = (id: string) => ({ id });
+interface TopoGraphNode {
+  id: string;
+}
 
-const createMockEdge = (source: string, target: string) => ({
+interface TopoGraphEdge {
+  getSourceCellId: () => string | undefined;
+  getTargetCellId: () => string | undefined;
+}
+
+interface TopoGraph {
+  getNodes: () => TopoGraphNode[];
+  getEdges: () => TopoGraphEdge[];
+}
+
+const createMockNode = (id: string): TopoGraphNode => ({ id });
+
+const createMockEdge = (source: string, target: string): TopoGraphEdge => ({
   getSourceCellId: () => source,
   getTargetCellId: () => target,
 });
 
-const createMockGraph = (nodes: unknown[], edges: unknown[]) => ({
+const createMockGraph = (nodes: TopoGraphNode[], edges: TopoGraphEdge[]): TopoGraph => ({
   getNodes: () => nodes,
   getEdges: () => edges,
 });
@@ -62,7 +76,7 @@ describe('topology-sort', () => {
 
     it('should handle single node', () => {
       const nodes = [createMockNode('A')];
-      const edges: unknown[] = [];
+      const edges: TopoGraphEdge[] = [];
       const graph = createMockGraph(nodes, edges);
 
       const result = topologySort(graph);
@@ -70,8 +84,8 @@ describe('topology-sort', () => {
     });
 
     it('should handle empty graph', () => {
-      const nodes: unknown[] = [];
-      const edges: unknown[] = [];
+      const nodes: TopoGraphNode[] = [];
+      const edges: TopoGraphEdge[] = [];
       const graph = createMockGraph(nodes, edges);
 
       const result = topologySort(graph);
