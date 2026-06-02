@@ -7,7 +7,7 @@ import { useToast } from '@/composables/useToast';
 import { isOutputPort, getInputPortId, validateLoopNodeConnection } from '@/utils/connection';
 import { COLORS } from '@/config/constants';
 import { showStatusMessage } from './helpers';
-import { EMBED_PADDING } from './constants';
+import { EMBED_PADDING, PASTE_OFFSET } from './constants';
 import { isLoopChildNode } from '@/utils/node-utils';
 import WorkflowNode from '@/components/workflow/WorkflowNode.vue';
 import LoopNode from '@/components/workflow/LoopNode.vue';
@@ -189,11 +189,11 @@ export function createNodeAndConnect(
   const { sourceNode, sourcePortId, targetPosition } = context;
 
   const loopParentResult = isLoopChildNode(sourceNode);
+  const loopNode = loopParentResult.loopNode;
 
   let newNode: Node | null;
 
-  if (loopParentResult.isLoopChild && loopParentResult.loopNode) {
-    const loopNode = loopParentResult.loopNode;
+  if (loopParentResult.isLoopChild && loopNode) {
     const loopPosition = loopNode.position();
     const loopSize = loopNode.size();
 
@@ -212,6 +212,14 @@ export function createNodeAndConnect(
     newNode = addNode(nodeType, targetPosition.x, targetPosition.y);
   }
 
+  loopNode?.fit({
+    padding: {
+      top: PASTE_OFFSET,
+      bottom: EMBED_PADDING,
+      left: EMBED_PADDING,
+      right: EMBED_PADDING,
+    },
+  });
   if (!newNode) {
     uiStore.hideNodePanel();
     return;
@@ -219,11 +227,13 @@ export function createNodeAndConnect(
 
   const inputPortId = getInputPortId(sourcePortId);
 
-  graphRef.value?.addEdge({
+  const edge = graphRef.value?.addEdge({
     ...edgeStyle,
     source: { cell: sourceNode.id, port: sourcePortId },
     target: { cell: newNode.id, port: inputPortId },
   });
+
+  edge?.toFront();
 
   uiStore.hideNodePanel();
   showStatusMessage(toast, '节点创建成功');
@@ -325,8 +335,8 @@ export function bindEvents(
               hasChange = true;
             }
 
-            if ((inflatedBBox as unknown as { y: number }).y - 50 < y) {
-              y = (inflatedBBox as unknown as { y: number }).y - 50;
+            if ((inflatedBBox as unknown as { y: number }).y - PASTE_OFFSET < y) {
+              y = (inflatedBBox as unknown as { y: number }).y - PASTE_OFFSET;
               hasChange = true;
             }
 

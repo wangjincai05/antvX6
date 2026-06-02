@@ -7,7 +7,7 @@ export const MIN_ZOOM = 0.2;
 
 export const PASTE_OFFSET = 50;
 
-export const EMBED_PADDING = 5;
+export const EMBED_PADDING = 20;
 
 export const DEFAULT_DURATION = 2000;
 
