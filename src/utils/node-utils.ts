@@ -1,3 +1,9 @@
+const iconResources = import.meta.glob('/src/assets/images/*.png', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+});
+
 export const getIconPath = (iconName?: string): string => {
   const iconMap: Record<string, string> = {
     'icon-start': '/src/assets/images/icon-start.png',
@@ -15,5 +21,7 @@ export const getIconPath = (iconName?: string): string => {
     'icon-loopEnd': '/src/assets/images/icon-loopEnd.png',
     'icon-loop': '/src/assets/images/icon-loop.png',
   };
-  return iconMap[iconName || ''] || '/src/assets/images/icon-variable.png';
+
+  const path = iconMap[iconName || ''] || '/src/assets/images/icon-variable.png';
+  return (iconResources[path] as string) || path;
 };
