@@ -332,7 +332,7 @@ export const useDryRunStore = defineStore('dryRun', () => {
   };
 
   const executeNode = async (
-    node: { id: string; data?: { type?: string } },
+    node: { id: string; data?: { type: string; properties?: Record<string, unknown> } },
     index: number
   ): Promise<unknown> => {
     await new Promise((resolve) => setTimeout(resolve, 500 + index * 200));
