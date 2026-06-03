@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex items-center gap-3 p-3 bg-white rounded-lg border-2 cursor-default"
+    class="flex items-center gap-3 p-3 bg-white rounded-lg border-2 cursor-default relative"
     :title="customDescription || config?.description || ''"
     :style="containerStyle"
   >
@@ -22,6 +22,13 @@
       <div class="text-sm font-medium text-gray-800">{{ displayLabel }}</div>
       <div class="text-xs text-gray-500 truncate">{{ displayDescription }}</div>
     </div>
+    <NodeStatusBadge
+      v-if="nodeExecutionState"
+      :status="nodeExecutionState.status"
+      :error="nodeExecutionState.error"
+      :start-time="nodeExecutionState.startTime"
+      :end-time="nodeExecutionState.endTime"
+    />
   </div>
 </template>
 
@@ -29,6 +36,8 @@
 import { computed, inject, ref, onMounted, onUnmounted } from 'vue';
 import { nodeRegistry } from '@/config/workflow/node-registry';
 import { getIconPath } from '@/utils/node-utils';
+import { useDryRunStore } from '@/stores/dryRunStore';
+import NodeStatusBadge from './NodeStatusBadge.vue';
 import type { Graph } from '@antv/x6';
 
 interface GetNodeFn {
@@ -47,7 +56,17 @@ const node = getNode?.();
 const graph = getGraph?.();
 const nodeId = node?.id || '';
 
+const dryRunStore = useDryRunStore();
+
 const nodeData = ref(node?.getData?.() || {});
+
+const nodeExecutionState = computed(() => {
+  const currentRecord = dryRunStore.getCurrentRecord();
+  if (currentRecord && nodeId) {
+    return currentRecord.executionStates[nodeId];
+  }
+  return null;
+});
 
 const config = computed(() => nodeRegistry[nodeData.value.type || '']);
 

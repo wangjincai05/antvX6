@@ -75,9 +75,9 @@ export function validateConnection(
   targetMagnet: unknown,
   graph?: { getEdges: () => GraphEdge[] }
 ) {
-  if (!sourceMagnet) return { valid: false, reason: '' };
-  if (!targetMagnet) return { valid: false, reason: '' };
-  if (sourceCell === targetCell) return { valid: false, reason: '' };
+  if (!sourceMagnet) return { valid: false, reason: '源连接点不存在' };
+  if (!targetMagnet) return { valid: false, reason: '目标连接点不存在' };
+  if (sourceCell === targetCell) return { valid: false, reason: '不能连接到自身' };
 
   const sourceCellData = sourceCell as Cell | null | undefined;
   const targetCellData = targetCell as Cell | null | undefined;
@@ -90,19 +90,19 @@ export function validateConnection(
   const targetPortGroup = targetMagnetObj?.getAttribute('port-group');
 
   if (sourceType === 'OUTPUT') {
-    return { valid: false, reason: '' };
+    return { valid: false, reason: '输出节点不能作为源节点' };
   }
 
   if (targetType === 'INPUT') {
-    return { valid: false, reason: '' };
+    return { valid: false, reason: '开始节点不能作为目标节点' };
   }
 
   if (!isOutputPort(sourcePortGroup)) {
-    return { valid: false, reason: '' };
+    return { valid: false, reason: '输入桩不能发起连线，请使用输出桩（右侧或底部）' };
   }
 
   if (!isInputPort(targetPortGroup)) {
-    return { valid: false, reason: '' };
+    return { valid: false, reason: '输出桩不能接收连线，请连接至输入桩（左侧或顶部）' };
   }
 
   const loopValidation = validateLoopNodeConnection(sourceCell, targetCell);
@@ -119,7 +119,7 @@ export function validateConnection(
     });
 
     if (existingConnection) {
-      return { valid: false, reason: '' };
+      return { valid: false, reason: '这两节点之间已存在连线' };
     }
   }
 

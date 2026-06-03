@@ -1,10 +1,10 @@
 import type { ToastItem } from '@/components/common/Toast.vue';
 
-interface ToastOptions {
+export interface ToastOptions {
   duration?: number;
 }
 
-interface ToastApi {
+export interface ToastApi {
   success: (message: string, options?: ToastOptions) => void;
   error: (message: string, options?: ToastOptions) => void;
   warning: (message: string, options?: ToastOptions) => void;

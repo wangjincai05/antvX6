@@ -39,6 +39,36 @@ describe('dag-validator', () => {
       expect(result.cycle).toBeDefined();
     });
 
+    it('should return correct cycle path', () => {
+      const nodes = [
+        createMockNode('A'),
+        createMockNode('B'),
+        createMockNode('C'),
+        createMockNode('D'),
+      ];
+      const edges = [
+        createMockEdge('A', 'B'),
+        createMockEdge('B', 'C'),
+        createMockEdge('C', 'D'),
+        createMockEdge('D', 'B'),
+      ];
+      const graph = createMockGraph(nodes, edges);
+
+      const result = detectCycle(graph);
+      expect(result.hasCycle).toBe(true);
+      expect(result.cycle).toEqual(['B', 'C', 'D', 'B']);
+    });
+
+    it('should return correct self-loop path', () => {
+      const nodes = [createMockNode('A'), createMockNode('B')];
+      const edges = [createMockEdge('A', 'A'), createMockEdge('A', 'B')];
+      const graph = createMockGraph(nodes, edges);
+
+      const result = detectCycle(graph);
+      expect(result.hasCycle).toBe(true);
+      expect(result.cycle).toEqual(['A', 'A']);
+    });
+
     it('should detect a self-loop', () => {
       const nodes = [createMockNode('A'), createMockNode('B')];
       const edges = [createMockEdge('A', 'A'), createMockEdge('A', 'B')];
@@ -99,7 +129,7 @@ describe('dag-validator', () => {
 
       const result = validateWorkflow(graph);
       expect(result.valid).toBe(false);
-      expect(result.errors.some((error) => error.includes('检测到循环依赖'))).toBe(true);
+      expect(result.errors.some((error) => error.message.includes('检测到循环依赖'))).toBe(true);
     });
 
     it('should fail validation when there is no INPUT node', () => {
@@ -109,7 +139,7 @@ describe('dag-validator', () => {
 
       const result = validateWorkflow(graph);
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain('缺少开始节点');
+      expect(result.errors.some((error) => error.message === '缺少开始节点')).toBe(true);
     });
 
     it('should fail validation when there is no OUTPUT node', () => {
@@ -119,7 +149,7 @@ describe('dag-validator', () => {
 
       const result = validateWorkflow(graph);
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain('缺少结束节点');
+      expect(result.errors.some((error) => error.message === '缺少结束节点')).toBe(true);
     });
 
     it('should fail validation when there are multiple INPUT nodes', () => {
@@ -133,7 +163,8 @@ describe('dag-validator', () => {
 
       const result = validateWorkflow(graph);
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain('只能有一个开始节点');
+      expect(result.errors.some((error) => error.message === '只能有一个开始节点')).toBe(true);
+      expect(result.errors.some((error) => error.nodeIds?.includes('start1'))).toBe(true);
     });
 
     it('should fail validation for empty workflow', () => {
@@ -143,7 +174,23 @@ describe('dag-validator', () => {
 
       const result = validateWorkflow(graph);
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain('工作流为空');
+      expect(result.errors.some((error) => error.message === '工作流为空')).toBe(true);
+    });
+
+    it('should fail validation when there are isolated nodes', () => {
+      const nodes = [
+        createMockNode('start', 'INPUT'),
+        createMockNode('task1'),
+        createMockNode('task2'), // isolated
+        createMockNode('end', 'OUTPUT'),
+      ];
+      const edges = [createMockEdge('start', 'task1'), createMockEdge('task1', 'end')];
+      const graph = createMockGraph(nodes, edges);
+
+      const result = validateWorkflow(graph);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some((error) => error.type === 'isolated_node')).toBe(true);
+      expect(result.errors.some((error) => error.nodeIds?.includes('task2'))).toBe(true);
     });
   });
 });

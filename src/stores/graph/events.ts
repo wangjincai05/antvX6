@@ -9,11 +9,15 @@ import { COLORS } from '@/config/constants';
 import { showStatusMessage } from './helpers';
 import { EMBED_PADDING, PASTE_OFFSET } from './constants';
 import { isLoopChildNode } from '@/utils/node-utils';
+import { throttle, debounce } from '@/utils/throttle';
 import WorkflowNode from '@/components/workflow/WorkflowNode.vue';
 import LoopNode from '@/components/workflow/LoopNode.vue';
 
 let lastEdgeToastTime = 0;
 const EDGE_TOAST_DELAY = 3000;
+
+const THROTTLE_DELAY = 50;
+const DEBOUNCE_DELAY = 100;
 
 export function registerNodes(): void {
   register({
@@ -269,7 +273,7 @@ export function bindEvents(
 
   graphRef.value.on(
     'node:change:size',
-    ({ node, options }: { node: Node; options: Record<string, unknown> }) => {
+    debounce(({ node, options }: { node: Node; options: Record<string, unknown> }) => {
       if (options.skipParentHandler) {
         return;
       }
@@ -278,11 +282,10 @@ export function bindEvents(
       if (children && children.length) {
         node.prop('originSize', node.getSize());
       }
-    }
+    }, DEBOUNCE_DELAY)
   );
 
-  graphRef.value.on(
-    'node:change:position',
+  const positionHandler = debounce(
     ({ node, options }: { node: Node; options: Record<string, unknown> }) => {
       if (options.skipParentHandler || targetCtrlPressed.value) {
         return;
@@ -359,8 +362,11 @@ export function bindEvents(
           );
         }
       }
-    }
+    },
+    DEBOUNCE_DELAY
   );
+
+  graphRef.value.on('node:change:position', positionHandler);
 
   graphRef.value.on('node:mousedown', ({ node }: { node: Node }) => {
     node.toFront();
@@ -378,21 +384,33 @@ export function bindEvents(
     }
   });
 
-  graphRef.value.on('edge:mouseenter', ({ edge }: { edge: Edge }) => {
-    highlightEdge(edge, true);
-  });
+  graphRef.value.on(
+    'edge:mouseenter',
+    throttle(({ edge }: { edge: Edge }) => {
+      highlightEdge(edge, true);
+    }, THROTTLE_DELAY)
+  );
 
-  graphRef.value.on('edge:mouseleave', ({ edge }: { edge: Edge }) => {
-    highlightEdge(edge, false);
-  });
+  graphRef.value.on(
+    'edge:mouseleave',
+    throttle(({ edge }: { edge: Edge }) => {
+      highlightEdge(edge, false);
+    }, THROTTLE_DELAY)
+  );
 
-  graphRef.value.on('node:mouseover', ({ node }: { node: Node }) => {
-    handleNodeMouseOver(node);
-  });
+  graphRef.value.on(
+    'node:mouseover',
+    throttle(({ node }: { node: Node }) => {
+      handleNodeMouseOver(node);
+    }, THROTTLE_DELAY)
+  );
 
-  graphRef.value.on('node:mouseout', ({ node }: { node: Node }) => {
-    handleNodeMouseOut(node);
-  });
+  graphRef.value.on(
+    'node:mouseout',
+    throttle(({ node }: { node: Node }) => {
+      handleNodeMouseOut(node);
+    }, THROTTLE_DELAY)
+  );
 
   graphRef.value.on('connecting:start', () => {
     showStatusMessageFn('从输出桩（绿色）拖动到输入桩（蓝色）', 3000);
@@ -406,37 +424,43 @@ export function bindEvents(
     handlePortClick(graphRef, uiStore, node, e);
   });
 
-  graphRef.value.on('edge:change:target', ({ edge }: { edge: Edge }) => {
-    const sourceCell = edge.getSourceCell();
-    const targetCell = edge.getTargetCell();
+  graphRef.value.on(
+    'edge:change:target',
+    throttle(({ edge }: { edge: Edge }) => {
+      const sourceCell = edge.getSourceCell();
+      const targetCell = edge.getTargetCell();
 
-    if (sourceCell && targetCell && sourceCell.isNode() && targetCell.isNode()) {
-      const result = validateLoopNodeConnection(sourceCell, targetCell);
-      if (!result.valid) {
-        const now = Date.now();
-        if (now - lastEdgeToastTime > EDGE_TOAST_DELAY) {
-          _toast.warning(result.reason);
-          lastEdgeToastTime = now;
+      if (sourceCell && targetCell && sourceCell.isNode() && targetCell.isNode()) {
+        const result = validateLoopNodeConnection(sourceCell, targetCell);
+        if (!result.valid) {
+          const now = Date.now();
+          if (now - lastEdgeToastTime > EDGE_TOAST_DELAY) {
+            _toast.warning(result.reason);
+            lastEdgeToastTime = now;
+          }
+          edge.remove();
         }
-        edge.remove();
       }
-    }
-  });
+    }, THROTTLE_DELAY)
+  );
 
-  graphRef.value.on('edge:change:source', ({ edge }: { edge: Edge }) => {
-    const sourceCell = edge.getSourceCell();
-    const targetCell = edge.getTargetCell();
+  graphRef.value.on(
+    'edge:change:source',
+    throttle(({ edge }: { edge: Edge }) => {
+      const sourceCell = edge.getSourceCell();
+      const targetCell = edge.getTargetCell();
 
-    if (sourceCell && targetCell && sourceCell.isNode() && targetCell.isNode()) {
-      const result = validateLoopNodeConnection(sourceCell, targetCell);
-      if (!result.valid) {
-        const now = Date.now();
-        if (now - lastEdgeToastTime > EDGE_TOAST_DELAY) {
-          _toast.warning(result.reason);
-          lastEdgeToastTime = now;
+      if (sourceCell && targetCell && sourceCell.isNode() && targetCell.isNode()) {
+        const result = validateLoopNodeConnection(sourceCell, targetCell);
+        if (!result.valid) {
+          const now = Date.now();
+          if (now - lastEdgeToastTime > EDGE_TOAST_DELAY) {
+            _toast.warning(result.reason);
+            lastEdgeToastTime = now;
+          }
+          edge.remove();
         }
-        edge.remove();
       }
-    }
-  });
+    }, THROTTLE_DELAY)
+  );
 }

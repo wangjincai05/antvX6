@@ -1,155 +1,204 @@
+export type ErrorCode =
+  | 'VALIDATION_ERROR'
+  | 'EXECUTION_ERROR'
+  | 'NETWORK_ERROR'
+  | 'PARSE_ERROR'
+  | 'AUTH_ERROR'
+  | 'NOT_FOUND_ERROR'
+  | 'TIMEOUT_ERROR'
+  | 'UNKNOWN_ERROR';
+
+export interface ErrorContext {
+  nodeId?: string;
+  edgeId?: string;
+  workflowId?: string;
+  operation?: string;
+  timestamp?: number;
+  stack?: string;
+  [key: string]: unknown;
+}
+
 export class WorkflowError extends Error {
-  constructor(
-    message: string,
-    public code?: string
-  ) {
+  code: ErrorCode;
+  context: ErrorContext;
+  originalError?: Error;
+
+  constructor(message: string, code: ErrorCode, context: ErrorContext = {}, originalError?: Error) {
     super(message);
     this.name = 'WorkflowError';
+    this.code = code;
+    this.context = { timestamp: Date.now(), ...context };
+    this.originalError = originalError;
+
+    if (originalError) {
+      this.stack = originalError.stack;
+    }
+  }
+
+  toJSON() {
+    return {
+      name: this.name,
+      message: this.message,
+      code: this.code,
+      context: this.context,
+      stack: this.stack,
+    };
   }
 }
 
-export class GraphError extends Error {
-  constructor(
-    message: string,
-    public code?: string
-  ) {
-    super(message);
-    this.name = 'GraphError';
-  }
-}
-
-export class ExecutionError extends Error {
-  constructor(
-    message: string,
-    public code?: string,
-    public nodeId?: string
-  ) {
-    super(message);
-    this.name = 'ExecutionError';
-  }
-}
-
-export class ValidationError extends Error {
-  constructor(
-    message: string,
-    public code?: string,
-    public field?: string
-  ) {
-    super(message);
+export class ValidationError extends WorkflowError {
+  constructor(message: string, context: ErrorContext = {}) {
+    super(message, 'VALIDATION_ERROR', context);
     this.name = 'ValidationError';
   }
 }
 
-export interface ErrorInfo {
-  message: string;
-  code?: string;
-  field?: string;
-  nodeId?: string;
-  stack?: string;
-}
-
-export const errorCodes = {
-  WORKFLOW_EMPTY: 'WORKFLOW_EMPTY',
-  WORKFLOW_CYCLE: 'WORKFLOW_CYCLE',
-  WORKFLOW_MISSING_START: 'WORKFLOW_MISSING_START',
-  WORKFLOW_MULTIPLE_STARTS: 'WORKFLOW_MULTIPLE_STARTS',
-  WORKFLOW_MISSING_END: 'WORKFLOW_MISSING_END',
-  CONNECTION_INVALID: 'CONNECTION_INVALID',
-  CONNECTION_SELF: 'CONNECTION_SELF',
-  CONNECTION_DUPLICATE: 'CONNECTION_DUPLICATE',
-  NODE_NOT_FOUND: 'NODE_NOT_FOUND',
-  NODE_TYPE_INVALID: 'NODE_TYPE_INVALID',
-  GRAPH_NOT_INITIALIZED: 'GRAPH_NOT_INITIALIZED',
-  EXECUTION_FAILED: 'EXECUTION_FAILED',
-  EXECUTION_TIMEOUT: 'EXECUTION_TIMEOUT',
-  VALIDATION_FAILED: 'VALIDATION_FAILED',
-  PARSE_ERROR: 'PARSE_ERROR',
-};
-
-export const errorMessages: Record<string, string> = {
-  [errorCodes.WORKFLOW_EMPTY]: '工作流为空',
-  [errorCodes.WORKFLOW_CYCLE]: '检测到循环依赖',
-  [errorCodes.WORKFLOW_MISSING_START]: '缺少开始节点',
-  [errorCodes.WORKFLOW_MULTIPLE_STARTS]: '只能有一个开始节点',
-  [errorCodes.WORKFLOW_MISSING_END]: '缺少结束节点',
-  [errorCodes.CONNECTION_INVALID]: '无效的连接',
-  [errorCodes.CONNECTION_SELF]: '不能连接到自身',
-  [errorCodes.CONNECTION_DUPLICATE]: '这两节点之间已存在连线',
-  [errorCodes.NODE_NOT_FOUND]: '节点不存在',
-  [errorCodes.NODE_TYPE_INVALID]: '无效的节点类型',
-  [errorCodes.GRAPH_NOT_INITIALIZED]: '图形实例未初始化',
-  [errorCodes.EXECUTION_FAILED]: '执行失败',
-  [errorCodes.EXECUTION_TIMEOUT]: '执行超时',
-  [errorCodes.VALIDATION_FAILED]: '验证失败',
-  [errorCodes.PARSE_ERROR]: '解析错误',
-};
-
-export function createWorkflowError(code: string, detail?: string): WorkflowError {
-  let message = errorMessages[code] || code;
-  if (detail) {
-    message = `${message}: ${detail}`;
+export class ExecutionError extends WorkflowError {
+  constructor(message: string, context: ErrorContext = {}, originalError?: Error) {
+    super(message, 'EXECUTION_ERROR', context, originalError);
+    this.name = 'ExecutionError';
   }
-  return new WorkflowError(message, code);
 }
 
-export function createGraphError(code: string, detail?: string): GraphError {
-  let message = errorMessages[code] || code;
-  if (detail) {
-    message = `${message}: ${detail}`;
+export class NetworkError extends WorkflowError {
+  constructor(message: string, context: ErrorContext = {}, originalError?: Error) {
+    super(message, 'NETWORK_ERROR', context, originalError);
+    this.name = 'NetworkError';
   }
-  return new GraphError(message, code);
 }
 
-export function createExecutionError(
-  code: string,
-  detail?: string,
-  nodeId?: string
-): ExecutionError {
-  let message = errorMessages[code] || code;
-  if (detail) {
-    message = `${message}: ${detail}`;
+export class ParseError extends WorkflowError {
+  constructor(message: string, context: ErrorContext = {}, originalError?: Error) {
+    super(message, 'PARSE_ERROR', context, originalError);
+    this.name = 'ParseError';
   }
-  return new ExecutionError(message, code, nodeId);
 }
 
-export function createValidationError(
-  code: string,
-  field?: string,
-  detail?: string
-): ValidationError {
-  let message = errorMessages[code] || code;
-  if (detail) {
-    message = `${message}: ${detail}`;
-  }
-  return new ValidationError(message, code, field);
+export interface ErrorHandlerOptions {
+  showToast?: boolean;
+  logErrors?: boolean;
+  onError?: (error: WorkflowError) => void;
 }
 
-export function handleError(error: unknown): ErrorInfo {
-  if (error instanceof Error) {
-    return {
-      message: error.message,
-      code: (error as WorkflowError | GraphError | ExecutionError | ValidationError).code,
-      field: (error as ValidationError).field,
-      nodeId: (error as ExecutionError).nodeId,
-      stack: error.stack,
+export class ErrorHandler {
+  private options: ErrorHandlerOptions;
+
+  constructor(options: ErrorHandlerOptions = {}) {
+    this.options = {
+      showToast: true,
+      logErrors: true,
+      ...options,
     };
   }
-  return {
-    message: String(error),
-  };
-}
 
-export function logError(error: unknown): void {
-  const errorInfo = handleError(error);
-  showError(errorInfo.message);
-}
+  handle(error: unknown): WorkflowError {
+    const workflowError = this.normalizeError(error);
 
-export function showError(error: unknown): void {
-  const errorInfo = handleError(error);
-  (window as unknown as { $toast: (options: { message: string; type?: string }) => void }).$toast?.(
-    {
-      message: errorInfo.message,
-      type: 'error',
+    if (this.options.logErrors) {
+      this.logError(workflowError);
     }
-  );
+
+    if (this.options.showToast) {
+      this.showErrorToast(workflowError);
+    }
+
+    if (this.options.onError) {
+      this.options.onError(workflowError);
+    }
+
+    return workflowError;
+  }
+
+  normalizeError(error: unknown): WorkflowError {
+    if (error instanceof WorkflowError) {
+      return error;
+    }
+
+    if (error instanceof Error) {
+      if (
+        error.message.includes('network') ||
+        error.message.includes('fetch') ||
+        error.message.includes('timeout')
+      ) {
+        return new NetworkError(error.message, {}, error);
+      }
+      if (error.message.includes('parse') || error.message.includes('JSON')) {
+        return new ParseError(error.message, {}, error);
+      }
+      return new ExecutionError(error.message, {}, error);
+    }
+
+    if (typeof error === 'string') {
+      return new WorkflowError(error, 'UNKNOWN_ERROR');
+    }
+
+    return new WorkflowError('Unknown error occurred', 'UNKNOWN_ERROR');
+  }
+
+  logError(error: WorkflowError): void {
+    console.error('[Workflow Error]', {
+      code: error.code,
+      message: error.message,
+      context: error.context,
+      stack: error.stack,
+    });
+  }
+
+  showErrorToast(error: WorkflowError): void {
+    const toast = useToast();
+    const message = this.formatErrorMessage(error);
+    toast.error(message);
+  }
+
+  formatErrorMessage(error: WorkflowError): string {
+    const contextInfo = error.context.nodeId
+      ? ` [节点: ${error.context.nodeId}]`
+      : error.context.workflowId
+        ? ` [工作流: ${error.context.workflowId}]`
+        : '';
+
+    return `${error.message}${contextInfo}`;
+  }
+
+  wrap<T>(fn: () => T): T {
+    try {
+      return fn();
+    } catch (error) {
+      throw this.normalizeError(error);
+    }
+  }
+
+  async wrapAsync<T>(fn: () => Promise<T>): Promise<T> {
+    try {
+      return await fn();
+    } catch (error) {
+      throw this.normalizeError(error);
+    }
+  }
+}
+
+let defaultErrorHandler: ErrorHandler | null = null;
+
+export function getErrorHandler(): ErrorHandler {
+  if (!defaultErrorHandler) {
+    defaultErrorHandler = new ErrorHandler();
+  }
+  return defaultErrorHandler;
+}
+
+export function setErrorHandler(handler: ErrorHandler): void {
+  defaultErrorHandler = handler;
+}
+
+export function handleError(error: unknown): WorkflowError {
+  return getErrorHandler().handle(error);
+}
+
+function useToast() {
+  return {
+    error: (message: string) => console.error('Toast Error:', message),
+    success: (message: string) => console.log('Toast Success:', message),
+    warning: (message: string) => console.warn('Toast Warning:', message),
+    info: (message: string) => console.info('Toast Info:', message),
+  };
 }

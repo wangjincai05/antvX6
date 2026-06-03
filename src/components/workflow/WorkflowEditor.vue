@@ -25,6 +25,20 @@
           class="absolute right-0 top-0 h-full z-40 shadow-xl"
         />
       </Transition>
+
+      <Transition name="slide">
+        <DryRunPanel
+          v-if="dryRunPanelVisible"
+          :visible="dryRunPanelVisible"
+          @close="dryRunPanelVisible = false"
+          @start="handleDryRun"
+          @stop="handleStopDryRun"
+          @pause="handlePauseDryRun"
+          @resume="handleResumeDryRun"
+          @restart="handleRestartDryRun"
+          class="absolute right-0 top-0 h-full z-40 shadow-xl"
+        />
+      </Transition>
     </div>
 
     <BottomToolbar
@@ -58,16 +72,20 @@ import BottomToolbar from './BottomToolbar.vue';
 import InspectorPanel from './InspectorPanel.vue';
 import RunPanel from './RunPanel.vue';
 import NodeSelectPanel from './NodeSelectPanel.vue';
+import DryRunPanel from './DryRunPanel.vue';
+import { useDryRunStore } from '@/stores/dryRunStore';
 
 const toast = useToast();
 
 const showRunPanel = ref(false);
 const containerRef = ref<HTMLElement | null>(null);
 const currentZoom = ref(1);
+const dryRunPanelVisible = ref(false);
 
 const graphStore = useGraphStore();
 const workflowStore = useWorkflowStore();
 const uiStore = useUiStore();
+const dryRunStore = useDryRunStore();
 
 const inspectorSelectedNode = computed(
   () => graphStore.selectionStore.selectedNode as InspectorNode | null
@@ -88,7 +106,7 @@ const {
   updateNodeProperty,
 } = graphStore;
 
-const { startExecution, stopExecution, workflowState } = workflowStore;
+const { stopExecution, workflowState } = workflowStore;
 
 onMounted(() => {
   if (containerRef.value) {
@@ -176,14 +194,37 @@ const handleImport = () => {
 };
 
 const handleRun = async () => {
-  const result = await startExecution();
+  dryRunPanelVisible.value = true;
+};
+
+const handleStop = () => {
+  stopExecution();
+};
+
+const handleDryRun = async () => {
+  const result = await dryRunStore.startDryRun();
   if (!result.success) {
     toast.error(result.errors.join('\n'));
   }
 };
 
-const handleStop = () => {
-  stopExecution();
+const handleStopDryRun = () => {
+  dryRunStore.stopDryRun();
+};
+
+const handlePauseDryRun = () => {
+  dryRunStore.pauseDryRun();
+};
+
+const handleResumeDryRun = () => {
+  dryRunStore.resumeDryRun();
+};
+
+const handleRestartDryRun = async () => {
+  const result = await dryRunStore.restartDryRun();
+  if (!result.success) {
+    toast.error(result.errors.join('\n'));
+  }
 };
 
 const handleAddNode = (type: string) => {

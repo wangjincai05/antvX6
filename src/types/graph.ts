@@ -1,18 +1,82 @@
+export interface NodeProperties {
+  label?: string;
+  description?: string;
+  position?: { x: number; y: number };
+  [key: string]: unknown;
+}
+
+export interface GraphNodeData {
+  type: string;
+  properties?: NodeProperties;
+  description?: string;
+  label?: string;
+}
+
 export interface GraphNode {
   id: string;
-  data?: { type?: string };
+  data?: GraphNodeData;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+}
+
+export interface EdgeProperties {
+  label?: string;
+  color?: string;
+  [key: string]: unknown;
 }
 
 export interface GraphEdge {
+  id?: string;
+  source?: unknown;
+  target?: unknown;
+  sourcePortId?: string;
+  targetPortId?: string;
   getSourceCellId: () => string | undefined;
   getTargetCellId: () => string | undefined;
   getSourcePortId?: () => string | undefined;
   getTargetPortId?: () => string | undefined;
+  data?: EdgeProperties;
 }
 
 export interface Graph {
   getNodes: () => GraphNode[];
   getEdges: () => GraphEdge[];
+  getNodeById?: (id: string) => GraphNode | undefined;
+  getEdgeById?: (id: string) => GraphEdge | undefined;
+}
+
+export type WorkflowNodeType =
+  | 'INPUT'
+  | 'OUTPUT'
+  | 'CONDITION'
+  | 'LOOP'
+  | 'LOOP_END'
+  | 'LOOP_BREAK'
+  | 'LLM'
+  | 'CODE'
+  | 'DATABASE'
+  | 'KNOWLEDGE'
+  | 'default';
+
+export type PortType = 'input' | 'output';
+
+export interface PortConfig {
+  id: string;
+  type: PortType;
+  group: string;
+  position?: { x: number; y: number };
+}
+
+export interface NodeConfig {
+  type: WorkflowNodeType;
+  label: string;
+  width?: number;
+  height?: number;
+  ports?: PortConfig[];
+  icon?: string;
+  color?: string;
 }
 
 export interface CellData {
