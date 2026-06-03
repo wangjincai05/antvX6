@@ -2,6 +2,8 @@
 
 基于 AntV X6 构建的 AI 智能体工作流编辑器，提供可视化的工作流设计能力，支持多种节点类型和复杂的流程编排。
 
+**在线预览**: <https://workflow.wantasy.asia/>
+
 ## 目录
 
 - [项目概述](#项目概述)
@@ -38,7 +40,9 @@
 | **属性检查器** | 选中节点后显示属性配置面板，支持动态编辑节点参数                            |
 | **历史记录**   | 完整的撤销/重做功能，支持快捷键操作                                         |
 | **工作流验证** | DAG 结构验证，确保工作流无环且结构正确                                      |
+| **工作流执行** | 支持同步/异步执行，带重试机制和状态追踪                                     |
 | **导入导出**   | 支持 JSON 格式的工作流数据导入导出                                          |
+| **性能优化**   | 高频事件节流、拓扑排序缓存、大规模图渲染优化                                |
 
 ## 技术栈
 
@@ -108,9 +112,9 @@ npm run test:coverage
    ```
 2. **打开浏览器**：访问 `http://localhost:5173`
 3. **创建工作流**：
-   - 从左侧节点面板拖拽节点到画布
+   - 从节点面板拖拽节点到画布
    - 点击节点连接桩创建连线
-   - 使用工具栏进行撤销/重做操作
+   - 使用快捷键ctrl + z/ ctrl + y进行撤销/重做操作
    - 通过右侧检查器编辑节点属性
 
 ### 基本操作
@@ -227,45 +231,33 @@ src/
 - `historyStore`: 管理操作历史
 - `workflowStore`: 管理工作流数据
 
+#### 依赖注入（di）
+
+- `container.ts`: DI 容器核心实现，支持依赖注册和解析
+- `types.ts`: 依赖类型定义，定义标准接口契约
+- `init.ts`: 依赖初始化函数，在应用启动时注册所有依赖
+
+#### 工作流执行器（executor）
+
+- `workflow-executor.ts`: 执行器核心实现，支持同步/异步执行、重试机制、状态追踪
+- `complex-workflow.test.ts`: 复杂工作流场景测试
+
+#### 业务服务层（services）
+
+- `graphOperations.ts`: 图形操作服务，封装节点编辑、属性更新等操作
+- `eventService.ts`: 事件处理服务，封装事件监听和处理逻辑
+- `uiService.ts`: UI 交互服务，处理拖拽、面板显示等交互
+
 #### 工具函数（utils）
 
 - `connection.ts`: 连线验证逻辑
-- `dag-validator.ts`: DAG 结构验证
-- `topology-sort.ts`: 拓扑排序算法
+- `dag-validator.ts`: DAG 结构验证（循环检测、孤立节点检测）
+- `topology-sort.ts`: 拓扑排序算法（带结果缓存）
 - `node-utils.ts`: 节点工具函数
+- `throttle.ts`: 节流/防抖工具函数
+- `error-handler.ts`: 统一错误处理机制
 
 ## 贡献规范
-
-### 提交规范
-
-遵循 Conventional Commits 规范：
-
-```
-<类型>(<范围>): <主题>
-
-<正文>
-
-<页脚>
-```
-
-**类型说明**：
-
-- `feat`: 新功能
-- `fix`: 修复 bug
-- `docs`: 文档更新
-- `style`: 代码格式调整
-- `refactor`: 重构
-- `perf`: 性能优化
-- `test`: 测试相关
-- `chore`: 构建/工具链相关
-
-### 开发流程
-
-1. Fork 仓库
-2. 创建特性分支：`git checkout -b feature/xxx`
-3. 提交代码：`git commit -m "feat(module): 添加 xxx 功能"`
-4. 推送分支：`git push origin feature/xxx`
-5. 创建 Pull Request
 
 ### 代码规范
 
@@ -283,7 +275,7 @@ MIT License
 如有问题或建议，请通过以下方式联系：
 
 - 提交 Issue
-- 发送邮件：wantasy05\@qq.com
+- 发送邮件：<wantasy05@qq.com>
 
 ---
 
